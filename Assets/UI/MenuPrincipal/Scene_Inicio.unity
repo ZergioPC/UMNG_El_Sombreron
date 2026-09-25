@@ -1193,6 +1193,7 @@ GameObject:
   - component: {fileID: 321027929}
   - component: {fileID: 321027928}
   - component: {fileID: 321027930}
+  - component: {fileID: 321027931}
   m_Layer: 5
   m_Name: trees_1
   m_TagString: Untagged
@@ -1269,6 +1270,22 @@ MonoBehaviour:
   amplitude: 2
   frequency: 0.5
   phase: 0
+--- !u!114 &321027931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 321027926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fab9d08f46e486b89047fe949f75f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIMouseParallax
+  amount: 5
+  smoothSpeed: 15
+  rectTransform: {fileID: 0}
+  initialPosition: {x: 0, y: 0}
 --- !u!1 &321977723
 GameObject:
   m_ObjectHideFlags: 0
@@ -4117,6 +4134,7 @@ GameObject:
   - component: {fileID: 498968774}
   - component: {fileID: 498968776}
   - component: {fileID: 498968775}
+  - component: {fileID: 498968777}
   m_Layer: 5
   m_Name: Pueblo_base
   m_TagString: Untagged
@@ -4178,6 +4196,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 498968773}
   m_CullTransparentMesh: 1
+--- !u!114 &498968777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 498968773}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fab9d08f46e486b89047fe949f75f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIMouseParallax
+  amount: 3
+  smoothSpeed: 15
+  rectTransform: {fileID: 0}
+  initialPosition: {x: 0, y: 0}
 --- !u!1 &501432316
 GameObject:
   m_ObjectHideFlags: 0
@@ -4480,6 +4514,81 @@ Transform:
   - {fileID: 74248696}
   m_Father: {fileID: 1332962056}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &565517600
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 565517601}
+  - component: {fileID: 565517603}
+  - component: {fileID: 565517602}
+  m_Layer: 5
+  m_Name: GALAXY
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &565517601
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 565517600}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1.1, y: 1.1, z: 1.1}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 1990174703}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &565517602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 565517600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 2100000, guid: 4c8ca082f23a6d1408587d8eb9150c0f, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &565517603
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 565517600}
+  m_CullTransparentMesh: 1
 --- !u!1 &623857504
 GameObject:
   m_ObjectHideFlags: 0
@@ -4723,6 +4832,7 @@ GameObject:
   - component: {fileID: 793173294}
   - component: {fileID: 793173293}
   - component: {fileID: 793173295}
+  - component: {fileID: 793173296}
   m_Layer: 5
   m_Name: trees_3
   m_TagString: Untagged
@@ -4799,6 +4909,22 @@ MonoBehaviour:
   amplitude: 2
   frequency: 0.5
   phase: 4
+--- !u!114 &793173296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793173291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fab9d08f46e486b89047fe949f75f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIMouseParallax
+  amount: 5
+  smoothSpeed: 15
+  rectTransform: {fileID: 0}
+  initialPosition: {x: 0, y: 0}
 --- !u!1 &816048132
 GameObject:
   m_ObjectHideFlags: 0
@@ -4882,6 +5008,7 @@ GameObject:
   - component: {fileID: 875683305}
   - component: {fileID: 875683307}
   - component: {fileID: 875683306}
+  - component: {fileID: 875683308}
   m_Layer: 5
   m_Name: Field1
   m_TagString: Untagged
@@ -4943,6 +5070,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 875683304}
   m_CullTransparentMesh: 1
+--- !u!114 &875683308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 875683304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fab9d08f46e486b89047fe949f75f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIMouseParallax
+  amount: 0
+  smoothSpeed: 15
+  rectTransform: {fileID: 0}
+  initialPosition: {x: 0, y: 0}
 --- !u!1001 &896764056
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5437,6 +5580,7 @@ GameObject:
   - component: {fileID: 1100985586}
   - component: {fileID: 1100985588}
   - component: {fileID: 1100985587}
+  - component: {fileID: 1100985589}
   m_Layer: 5
   m_Name: Field2
   m_TagString: Untagged
@@ -5498,6 +5642,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1100985585}
   m_CullTransparentMesh: 1
+--- !u!114 &1100985589
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1100985585}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fab9d08f46e486b89047fe949f75f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIMouseParallax
+  amount: 1
+  smoothSpeed: 15
+  rectTransform: {fileID: 0}
+  initialPosition: {x: 0, y: 0}
 --- !u!1 &1136048994
 GameObject:
   m_ObjectHideFlags: 0
@@ -5510,6 +5670,7 @@ GameObject:
   - component: {fileID: 1136048997}
   - component: {fileID: 1136048996}
   - component: {fileID: 1136048998}
+  - component: {fileID: 1136048999}
   m_Layer: 5
   m_Name: Pueblo_lights
   m_TagString: Untagged
@@ -5587,6 +5748,22 @@ MonoBehaviour:
   maxOpacity: 0.587
   frequency: 1
   phase: 0
+--- !u!114 &1136048999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1136048994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fab9d08f46e486b89047fe949f75f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIMouseParallax
+  amount: 3
+  smoothSpeed: 15
+  rectTransform: {fileID: 0}
+  initialPosition: {x: 0, y: 0}
 --- !u!1 &1150292678
 GameObject:
   m_ObjectHideFlags: 0
@@ -5686,6 +5863,7 @@ GameObject:
   - component: {fileID: 1261912191}
   - component: {fileID: 1261912193}
   - component: {fileID: 1261912192}
+  - component: {fileID: 1261912194}
   m_Layer: 5
   m_Name: Field3
   m_TagString: Untagged
@@ -5747,6 +5925,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1261912190}
   m_CullTransparentMesh: 1
+--- !u!114 &1261912194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1261912190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fab9d08f46e486b89047fe949f75f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIMouseParallax
+  amount: 2
+  smoothSpeed: 15
+  rectTransform: {fileID: 0}
+  initialPosition: {x: 0, y: 0}
 --- !u!1 &1261928375
 GameObject:
   m_ObjectHideFlags: 0
@@ -5838,6 +6032,7 @@ GameObject:
   - component: {fileID: 1272135590}
   - component: {fileID: 1272135589}
   - component: {fileID: 1272135591}
+  - component: {fileID: 1272135592}
   m_Layer: 5
   m_Name: trees_4
   m_TagString: Untagged
@@ -5914,6 +6109,22 @@ MonoBehaviour:
   amplitude: 1
   frequency: 1
   phase: 0
+--- !u!114 &1272135592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1272135587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fab9d08f46e486b89047fe949f75f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIMouseParallax
+  amount: 5
+  smoothSpeed: 15
+  rectTransform: {fileID: 0}
+  initialPosition: {x: 0, y: 0}
 --- !u!1 &1332962052
 GameObject:
   m_ObjectHideFlags: 0
@@ -5982,7 +6193,7 @@ Canvas:
   m_GameObject: {fileID: 1332962052}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 1
+  m_RenderMode: 0
   m_Camera: {fileID: 37774759}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -6651,7 +6862,7 @@ Canvas:
   m_GameObject: {fileID: 1990174699}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 1
+  m_RenderMode: 0
   m_Camera: {fileID: 37774759}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -6678,6 +6889,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 565517601}
   - {fileID: 211211641}
   - {fileID: 1613789009}
   - {fileID: 321977724}
@@ -6868,6 +7080,7 @@ GameObject:
   - component: {fileID: 2105010894}
   - component: {fileID: 2105010893}
   - component: {fileID: 2105010895}
+  - component: {fileID: 2105010896}
   m_Layer: 5
   m_Name: trees_2
   m_TagString: Untagged
@@ -6944,6 +7157,22 @@ MonoBehaviour:
   amplitude: 2
   frequency: 0.4
   phase: 0
+--- !u!114 &2105010896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2105010891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fab9d08f46e486b89047fe949f75f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIMouseParallax
+  amount: 5
+  smoothSpeed: 15
+  rectTransform: {fileID: 0}
+  initialPosition: {x: 0, y: 0}
 --- !u!1 &2105494927
 GameObject:
   m_ObjectHideFlags: 0

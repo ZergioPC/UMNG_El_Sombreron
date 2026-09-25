@@ -63,7 +63,8 @@ Material:
     m_Floats:
     - _AlphaSpeed: 0.1
     - _Amplitude: 0.2
-    - _BaseOpacity: 0.579
+    - _BaseOpacity: 0.4
+    - _Brightness: 1
     - _BumpScale: 1
     - _ColorMask: 15
     - _ColorSpeed: 0.2
@@ -74,6 +75,7 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _LightIntensity: 1
     - _MaxAlpha: 0.338
     - _Metallic: 0
     - _MinAlpha: 0
