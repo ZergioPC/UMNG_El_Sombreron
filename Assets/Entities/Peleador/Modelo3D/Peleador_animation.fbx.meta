@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 42736935ecee147c88f4ecb3252bf623
+guid: bae5757b8940b48699840040dd981dd3
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
@@ -32,19 +32,19 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: sombreron_body|sombreron_bodyAction
-      takeName: sombreron_body|sombreron_bodyAction
-      internalID: 8976722612762239879
-      firstFrame: 0
-      lastFrame: 333
+      name: idle
+      takeName: Peleador.001|Peleador|Brazo_I.001Action
+      internalID: -1343588289080765026
+      firstFrame: 10
+      lastFrame: 90
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
       cycleOffset: 0
       loop: 0
-      hasAdditiveReferencePose: 0
-      loopTime: 0
-      loopBlend: 0
+      hasAdditiveReferencePose: 1
+      loopTime: 1
+      loopBlend: 1
       loopBlendOrientation: 0
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
@@ -59,20 +59,20 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 0
+      additiveReferencePoseFrame: 10
     - serializedVersion: 16
-      name: sombreron_hat|sombreron_hatAction.001
-      takeName: sombreron_hat|sombreron_hatAction.001
-      internalID: -2504385698459488323
-      firstFrame: 0
-      lastFrame: 43
+      name: walk
+      takeName: Peleador.001|Peleador|Brazo_I.001Action
+      internalID: 6997612031406072335
+      firstFrame: 120
+      lastFrame: 179
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
       cycleOffset: 0
       loop: 0
-      hasAdditiveReferencePose: 0
-      loopTime: 0
+      hasAdditiveReferencePose: 1
+      loopTime: 1
       loopBlend: 0
       loopBlendOrientation: 0
       loopBlendPositionY: 0
@@ -88,13 +88,42 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 0
+      additiveReferencePoseFrame: 120
     - serializedVersion: 16
-      name: sombreron_body|sombreron_bodyAction (1)
-      takeName: sombreron_body|sombreron_bodyAction
-      internalID: 1771981113661986632
-      firstFrame: 0
-      lastFrame: 333
+      name: run
+      takeName: Peleador.001|Peleador|Brazo_I.001Action
+      internalID: 5491245379897393741
+      firstFrame: 250
+      lastFrame: 280
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 1
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 250
+    - serializedVersion: 16
+      name: attak
+      takeName: Peleador.001|Peleador|Brazo_I.001Action
+      internalID: -6429406902447020450
+      firstFrame: 300
+      lastFrame: 416
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -117,7 +146,7 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 0
+      additiveReferencePoseFrame: 250
     isReadable: 0
   meshes:
     lODScreenPercentages: []
