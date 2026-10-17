@@ -12,6 +12,10 @@ public class PlayerController : MonoBehaviour
 //Direcciones relativas a la cmara
     private Vector3 forward, right; // Vectores de dirección para el movimiento del jugador
 
+
+// Referencias a otros scripts
+    public CamaraController scriptCamara; // Referencia directa al script de la cámara
+
 // Variables para controlar el movimiento del jugador
     public float speed = 5f; // Velocidad de movimiento del jugador
     public float runSpeed = 10f; // Velocidad de carrera del jugador
@@ -51,6 +55,11 @@ public class PlayerController : MonoBehaviour
         right = Camera.main.transform.right;
         right.y = 0; // Mantener la altura del jugador constante
         right = Vector3.Normalize(right);
+
+        if(scriptCamara == null)
+        {
+            scriptCamara = FindAnyObjectByType<CamaraController>();
+        }
     }
 
 // Update is called once per frame
@@ -140,42 +149,74 @@ public class PlayerController : MonoBehaviour
         dashDisponible = true;
     }
 
-    void procesarAtrapar() // Metodo para procesar el atrapar objetos del jugador
+    // Metodo para procesar el atrapar objetos del jugador
+    void procesarAtrapar()
     {
         if (Input.GetMouseButtonDown(0)) 
         {
-            Collider[] NPCs = Physics.OverlapSphere(transform.position + transform.forward * rangoAtrapar, rangoAtrapar, capaNPC);
-            if (NPCs.Length > 0)
+            // Detectar NPCs en el rango de atrapar usando un OverlapSphere
+            Collider[] NPCsEncontrados = Physics.OverlapSphere(transform.position + transform.forward * rangoAtrapar, rangoAtrapar, capaNPC);
+            
+            // Si se encuentra al menos un NPC, atrapar al primero encontrado
+            if (NPCsEncontrados.Length > 0)
             {
-                NPCIdentity npc = NPCs[0].GetComponent<NPCIdentity>();
+                NPCIdentity npc = NPCsEncontrados[0].GetComponent<NPCIdentity>();
                 
                 if (npc != null)
                 {
-                    // Logica atrapar culpabe o inocente
-                    if (npc.esCulpable())
-                    {
-                        puntuacionActual += npc.puntosModificador; 
-                        Debug.Log("Puntaje actual: " + puntuacionActual);
-                    }
-                    else
-                    {
-                        puntuacionActual -= npc.puntosModificador; 
-                        Debug.Log("Puntaje actual: " + puntuacionActual);
-                    }
-
-                    /*
-                    // Easter Egg: serenata a la dama
-                    else if (npc.tipo == NPCIdentity.TipoNPC.Dama && tieneGuitarra)
-                    {
-                        puntuacionActual += bonificacionSerenata;
-                        Debug.Log($"¡Le diste una serenata a la Dama! +{bonificaciónSerenata} pts. Total: {puntuacionActual}");
-                    }
-                    */
-
-                    Destroy(npc.gameObject); // Destruir el NPC atrapado
+                    StartCoroutine(AtraparNPC(npc));
                 }
             }
         }
+    }
+
+    // Coroutine para atrapar un NPC
+    IEnumerator AtraparNPC(NPCIdentity npc)
+    {
+        bajoControlJugador = false; // Desactivar el control del jugador mientras se atrapa al NPC
+
+        if (rb != null) rb.linearVelocity = Vector3.zero; // Detener el movimiento del jugador mientras se atrapa al NPC
+
+        // Logica para atrapar al NPC (animacion)
+        Vector3 posicionInicial = transform.position;
+        Vector3 posicionFinal = npc.transform.position;
+        Vector3 direccionMirar = (posicionFinal - posicionInicial).normalized;
+        direccionMirar.y = 0; // Mantener la rotación en el plano horizontal
+        if (direccionMirar != Vector3.zero)
+        {
+            transform.rotation = Quaternion.LookRotation(direccionMirar);
+        }
+
+        // Animacion de atrapar)
+        float tiempoAtrapar = 0.2f;
+        float tiempoTranscurrido = 0f;
+
+        while (tiempoTranscurrido < tiempoAtrapar)
+        {
+            if (npc == null) break;
+            transform.position = Vector3.Lerp(posicionInicial, posicionFinal, tiempoTranscurrido / tiempoAtrapar);
+            tiempoTranscurrido += Time.deltaTime;
+            yield return null;
+        }
+        
+        // Logica para atrapar culpable o inocente
+        if (npc != null)
+        {
+            if (npc.esCulpable())
+            {
+                puntuacionActual += npc.puntosModificador; 
+            }else
+            {
+                puntuacionActual -= npc.puntosModificador; 
+            }
+            /*Easter Egg: serenata a la dama
+            else if (npc.tipo == NPCIdentity.TipoNPC.Dama && tieneGuitarra)
+            {
+            puntuacionActual += bonificacionSerenata;
+            }*/
+            Destroy(npc.gameObject); // Destruir el NPC atrapado
+        }
+        bajoControlJugador = true;  
     }
 
     void procesarInvocacionPerro() // Metodo para procesar la invocación del perro
@@ -199,10 +240,9 @@ public class PlayerController : MonoBehaviour
         perro.ActivarPerro(puntoInvocacion.position);
 
         // Cambiar la cámara para seguir al perro invocado
-        CamaraController camara = Camera.main.GetComponent<CamaraController>();
-        if (camara != null)
+        if (scriptCamara != null)
         {
-            camara.CambiarTarget(perro.transform);
+            scriptCamara.CambiarTarget(perro.transform);
         }
         
         //tiempo de invocación del perro
@@ -210,9 +250,9 @@ public class PlayerController : MonoBehaviour
         perro.DesactivarPerro(); // Desactivar el perro después del tiempo de invocación
 
         // Cambiar la cámara de vuelta al jugador
-        if (camara != null)
+        if (scriptCamara != null)
         {
-            camara.CambiarTarget(transform); // Cambiar la cámara de vuelta al jugador
+            scriptCamara.CambiarTarget(transform); // Cambiar la cámara de vuelta al jugador
         }
         bajoControlJugador = true; // Reactivar el control del jugador después de que el perro desaparezca
 
@@ -220,12 +260,8 @@ public class PlayerController : MonoBehaviour
         invocacionDisponible = true;
     }
 
-
-
-
-
-
-    private void OnCollisionStay(Collision collision) // Metodo para detectar si el jugador está en contacto con el suelo
+    // Metodo para detectar si el jugador está en contacto con el suelo
+    private void OnCollisionStay(Collision collision)
     {
         if (collision.gameObject.CompareTag("enSuelo"))
         {
@@ -233,22 +269,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void OnCollisionExit(Collision collision) // Metodo para detectar si el jugador deja de estar en contacto con el suelo
+    // Metodo para detectar si el jugador deja de estar en contacto con el suelo
+    private void OnCollisionExit(Collision collision) 
     {
         if (collision.gameObject.CompareTag("enSuelo"))
         {
             enSuelo = false;
         }
-    }
-
-
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.transform.CompareTag("Colectible"))
-        {
-            Debug.Log("Player collected an item!");
-            Destroy(collision.gameObject);
-        }    
     }
 }
