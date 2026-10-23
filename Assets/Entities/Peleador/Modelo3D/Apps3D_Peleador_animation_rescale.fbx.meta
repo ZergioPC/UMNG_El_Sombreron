@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: bae5757b8940b48699840040dd981dd3
+guid: c50f7a5ee3cbd4e3582332779d8bd3ec
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
@@ -33,8 +33,8 @@ ModelImporter:
     clipAnimations:
     - serializedVersion: 16
       name: idle
-      takeName: Peleador.001|Peleador|Brazo_I.001Action
-      internalID: -1343588289080765026
+      takeName: PeleadorRIG|PeleadorAction
+      internalID: -3113848356731562366
       firstFrame: 10
       lastFrame: 90
       wrapMode: 0
@@ -42,7 +42,7 @@ ModelImporter:
       level: 0
       cycleOffset: 0
       loop: 0
-      hasAdditiveReferencePose: 1
+      hasAdditiveReferencePose: 0
       loopTime: 1
       loopBlend: 1
       loopBlendOrientation: 0
@@ -59,21 +59,21 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 10
+      additiveReferencePoseFrame: 0
     - serializedVersion: 16
       name: walk
-      takeName: Peleador.001|Peleador|Brazo_I.001Action
-      internalID: 6997612031406072335
-      firstFrame: 120
-      lastFrame: 179
+      takeName: PeleadorRIG|PeleadorAction
+      internalID: 1165556034695654224
+      firstFrame: 121
+      lastFrame: 180
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
       cycleOffset: 0
       loop: 0
-      hasAdditiveReferencePose: 1
+      hasAdditiveReferencePose: 0
       loopTime: 1
-      loopBlend: 0
+      loopBlend: 1
       loopBlendOrientation: 0
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
@@ -88,21 +88,21 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 120
+      additiveReferencePoseFrame: 0
     - serializedVersion: 16
       name: run
-      takeName: Peleador.001|Peleador|Brazo_I.001Action
-      internalID: 5491245379897393741
+      takeName: PeleadorRIG|PeleadorAction
+      internalID: 3631723115989402454
       firstFrame: 250
-      lastFrame: 280
+      lastFrame: 279
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
       cycleOffset: 0
       loop: 0
-      hasAdditiveReferencePose: 1
+      hasAdditiveReferencePose: 0
       loopTime: 1
-      loopBlend: 0
+      loopBlend: 1
       loopBlendOrientation: 0
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
@@ -117,11 +117,11 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 250
+      additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: attak
-      takeName: Peleador.001|Peleador|Brazo_I.001Action
-      internalID: -6429406902447020450
+      name: atack
+      takeName: PeleadorRIG|PeleadorAction
+      internalID: 3462170110620113583
       firstFrame: 300
       lastFrame: 416
       wrapMode: 0
@@ -146,7 +146,7 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 250
+      additiveReferencePoseFrame: 0
     isReadable: 0
   meshes:
     lODScreenPercentages: []
