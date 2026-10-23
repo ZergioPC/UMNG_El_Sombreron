@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: a19881d03f01b416dbf773740bb73e82
+guid: 42d150789494e4cbdb5d85d101d4e396
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
@@ -33,8 +33,8 @@ ModelImporter:
     clipAnimations:
     - serializedVersion: 16
       name: idle
-      takeName: Tramposo.001|Tramposo|TramposoAction
-      internalID: 8730148273047717731
+      takeName: TramposoRig|TramposoAction
+      internalID: 5024210400850171184
       firstFrame: 10
       lastFrame: 120
       wrapMode: 0
@@ -42,7 +42,7 @@ ModelImporter:
       level: 0
       cycleOffset: 0
       loop: 0
-      hasAdditiveReferencePose: 1
+      hasAdditiveReferencePose: 0
       loopTime: 1
       loopBlend: 1
       loopBlendOrientation: 0
@@ -59,21 +59,21 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 10
+      additiveReferencePoseFrame: 0
     - serializedVersion: 16
       name: walk
-      takeName: Tramposo.001|Tramposo|TramposoAction
-      internalID: 8466988999723205641
-      firstFrame: 180
+      takeName: TramposoRig|TramposoAction
+      internalID: -4826032169652362184
+      firstFrame: 181
       lastFrame: 220
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
       cycleOffset: 0
       loop: 0
-      hasAdditiveReferencePose: 1
+      hasAdditiveReferencePose: 0
       loopTime: 1
-      loopBlend: 0
+      loopBlend: 1
       loopBlendOrientation: 0
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
@@ -88,21 +88,21 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 180
+      additiveReferencePoseFrame: 0
     - serializedVersion: 16
       name: run
-      takeName: Tramposo.001|Tramposo|TramposoAction
-      internalID: -5620194338917528369
-      firstFrame: 260
+      takeName: TramposoRig|TramposoAction
+      internalID: -5362508993933837748
+      firstFrame: 261
       lastFrame: 286
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
       cycleOffset: 0
       loop: 0
-      hasAdditiveReferencePose: 1
+      hasAdditiveReferencePose: 0
       loopTime: 1
-      loopBlend: 0
+      loopBlend: 1
       loopBlendOrientation: 0
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
@@ -117,11 +117,11 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 260
+      additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: attak
-      takeName: Tramposo.001|Tramposo|TramposoAction
-      internalID: 6947614541592370470
+      name: atack
+      takeName: TramposoRig|TramposoAction
+      internalID: -4111859864946100628
       firstFrame: 300
       lastFrame: 370
       wrapMode: 0
@@ -146,7 +146,7 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 260
+      additiveReferencePoseFrame: 0
     isReadable: 0
   meshes:
     lODScreenPercentages: []
