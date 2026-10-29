@@ -6,121 +6,109 @@ public class PerroController : MonoBehaviour
 {
     private Rigidbody rb;
     private bool estaActivo = false;
-
     public Transform jugador;
-    public Renderer rendererPerro;
 
-// Variables para controlar el movimiento del perro
-    public Vector3 offsetSeguimiento = new Vector3(-1f, 0, -1f); // Desplazamiento de la cámara respecto al perro
-    public float VelocidadSeguimiento = 10f; // Velocidad de seguimiento del perro
-    public float smoothSpeed = 0.125f; // Velocidad de suavizado del movimiento de la cámara
+    // Variables de seguimiento del jugador
+    public Vector3 offsetSeguimiento = new Vector3(-1.5f, 0, -1.5f);
+    public float velocidadSeguimiento = 10f;
 
-// Variables para controlar la invocación del perro
-    public float VelocidadInvocacion = 8f; // Velocidad de movimiento del perro durante la invocación
-    public float tiempoInvocacion = 5f; // Tiempo que el perro estará activo después de ser invocado
-
-// Variables para controlar el movimiento del perro
-    public float velocidad = 8f; // Velocidad de movimiento del perro
-    public float rangoDeteccion = 20f; // Rango de detección del jugador
-    public LayerMask capaNPC; // Capa de los NPCs para detectar colisiones
+    // Variables de movimiento del perro
+    public float velocidad = 8f;
+    public float rangoDeteccion = 15f;
+    public LayerMask capaNPC;
 
     private Vector3 forward, right; // Vectores de dirección para el movimiento del perro
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
-
-        if (rendererPerro == null)
-        {
-            rendererPerro = GetComponent<Renderer>();
-        }
+        rb = GetComponent<Rigidbody>();        
         DesactivarPerro();
-        
     }
 
-    // Update is called once per frame
     private void Update()
     {
-        if(estaActivo)
+        if (estaActivo)
         {
             ActualizarCamara();
             ProcesarMovimientoPerro();
-            BuscarNPCs();  
+            BuscarNPCs();
         }
         else
         {
-            seguirJugador();
+            SeguirJugador();
         }
-
     }
+
     void ActualizarCamara()
     {
         if (Camera.main != null)
-            {
-                forward = Camera.main.transform.forward;
-                forward.y = 0;
-                forward.Normalize();
+        {
+            // Actualizamos los vectores de dirección basados en la cámara principal
+            forward = Camera.main.transform.forward;
+            forward.y = 0;
+            forward.Normalize();
 
-                right = Camera.main.transform.right;
-                right.y = 0;
-                right.Normalize();
-            }
+            // Actualizamos el vector derecho basado en la cámara principal
+            right = Camera.main.transform.right;
+            right.y = 0;
+            right.Normalize();
+        }
     }
 
-    void seguirJugador() // Metodo para que el perro siga al jugador
+    void SeguirJugador()
     {
         if (jugador == null) return;
-        
-            Vector3 posicionDeseada = jugador.position + jugador.TransformDirection(offsetSeguimiento);
-            transform.position = Vector3.Lerp(transform.position, posicionDeseada, smoothSpeed);
-            transform.rotation = Quaternion.Lerp(transform.rotation, jugador.rotation, smoothSpeed);        
+
+        // Calculamos la posición deseada del perro detrás del jugador
+        Vector3 posicionDeseada = jugador.position + jugador.TransformDirection(offsetSeguimiento);
+        transform.position = Vector3.Lerp(transform.position, posicionDeseada, velocidadSeguimiento * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, jugador.rotation, velocidadSeguimiento * Time.deltaTime);
     }
 
-    public void ActivarPerro(Vector3 puntoInvocacion) // Metodo para activar el perro
+    public void ActivarPerro(Vector3 puntoInvocacion)
     {
+        // Posicionamos al perro en el punto de invocación y lo activamos
         transform.position = puntoInvocacion;
         estaActivo = true;
 
-        if (rendererPerro != null)
+        // Activamos las mallas visuales del perro
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+        foreach (Renderer r in renderers)
         {
-            rendererPerro.enabled = true; // Hacer visible el perro
+            r.enabled = true;
         }
 
-        // Recalcular direccion segun la camara
-        forward = Camera.main.transform.forward;
-        forward.y = 0;
-        forward.Normalize();
-
-        right = Camera.main.transform.right;
-        right.y = 0;
-        right.Normalize();
+        ActualizarCamara();
     }
 
-    public void DesactivarPerro() // Metodo para desactivar el perro
+    public void DesactivarPerro()
     {
         estaActivo = false;
 
-        if (rendererPerro != null)
+        // Ocultamos las mallas visuales sin apagar el GameObject
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+        foreach (Renderer r in renderers)
         {
-            rendererPerro.enabled = false; // Hacer invisible el perro
+            r.enabled = false;
         }
 
+        // Detenemos el movimiento del perro
         if (rb != null)
         {
-            rb.linearVelocity = Vector3.zero; // Detener el movimiento del perro
+            rb.linearVelocity = Vector3.zero;
         }
     }
 
-    void ProcesarMovimientoPerro() // Metodo para procesar el movimiento del perro
+    void ProcesarMovimientoPerro()
     {
-        float moveHorizontal = Input.GetAxis("Horizontal");
+        // Logica de movimiento del perro
+        float moveHorizontal = Input.GetAxis("Horizontal"); //
         float moveVertical = Input.GetAxis("Vertical");
 
         Vector3 movement = (forward * moveVertical + right * moveHorizontal).normalized;
 
         rb.linearVelocity = new Vector3(movement.x * velocidad, rb.linearVelocity.y, movement.z * velocidad);
-    
+
         if (movement != Vector3.zero)
         {
             Quaternion nuevaRotacion = Quaternion.LookRotation(movement);
@@ -128,10 +116,12 @@ public class PerroController : MonoBehaviour
         }
     }
 
-    void BuscarNPCs() // Metodo para buscar NPCs cercanos al perro
+    void BuscarNPCs()
     {
+        // Detectar NPCs dentro del rango de detección
         Collider[] npcsEncontrados = Physics.OverlapSphere(transform.position, rangoDeteccion, capaNPC);
 
+        // Revelar la identidad de cada NPC encontrado
         foreach (Collider npcCollider in npcsEncontrados)
         {
             NPCIdentity npc = npcCollider.GetComponent<NPCIdentity>();
@@ -142,8 +132,9 @@ public class PerroController : MonoBehaviour
         }
     }
 
-    private void OneDrawGizmosSelected()
+    private void OnDrawGizmosSelected()
     {
+        // Dibujar un gizmo para visualizar el rango de detección del perro
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, rangoDeteccion);
     }
