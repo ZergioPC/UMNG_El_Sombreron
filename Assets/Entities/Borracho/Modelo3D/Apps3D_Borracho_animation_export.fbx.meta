@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: bae5757b8940b48699840040dd981dd3
+guid: 24224bbc0a04d46909bba491d73dcd06
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
@@ -33,16 +33,16 @@ ModelImporter:
     clipAnimations:
     - serializedVersion: 16
       name: idle
-      takeName: Peleador.001|Peleador|Brazo_I.001Action
-      internalID: -1343588289080765026
-      firstFrame: 10
-      lastFrame: 90
+      takeName: BorrachoRIG|BorrachoAction
+      internalID: -3740310002748789649
+      firstFrame: 20
+      lastFrame: 119
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
       cycleOffset: 0
       loop: 0
-      hasAdditiveReferencePose: 1
+      hasAdditiveReferencePose: 0
       loopTime: 1
       loopBlend: 1
       loopBlendOrientation: 0
@@ -59,79 +59,21 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 10
+      additiveReferencePoseFrame: 0
     - serializedVersion: 16
       name: walk
-      takeName: Peleador.001|Peleador|Brazo_I.001Action
-      internalID: 6997612031406072335
-      firstFrame: 120
-      lastFrame: 179
-      wrapMode: 0
-      orientationOffsetY: 0
-      level: 0
-      cycleOffset: 0
-      loop: 0
-      hasAdditiveReferencePose: 1
-      loopTime: 1
-      loopBlend: 0
-      loopBlendOrientation: 0
-      loopBlendPositionY: 0
-      loopBlendPositionXZ: 0
-      keepOriginalOrientation: 0
-      keepOriginalPositionY: 1
-      keepOriginalPositionXZ: 0
-      heightFromFeet: 0
-      mirror: 0
-      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
-      curves: []
-      events: []
-      transformMask: []
-      maskType: 3
-      maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 120
-    - serializedVersion: 16
-      name: run
-      takeName: Peleador.001|Peleador|Brazo_I.001Action
-      internalID: 5491245379897393741
-      firstFrame: 250
-      lastFrame: 280
-      wrapMode: 0
-      orientationOffsetY: 0
-      level: 0
-      cycleOffset: 0
-      loop: 0
-      hasAdditiveReferencePose: 1
-      loopTime: 1
-      loopBlend: 0
-      loopBlendOrientation: 0
-      loopBlendPositionY: 0
-      loopBlendPositionXZ: 0
-      keepOriginalOrientation: 0
-      keepOriginalPositionY: 1
-      keepOriginalPositionXZ: 0
-      heightFromFeet: 0
-      mirror: 0
-      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
-      curves: []
-      events: []
-      transformMask: []
-      maskType: 3
-      maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 250
-    - serializedVersion: 16
-      name: attak
-      takeName: Peleador.001|Peleador|Brazo_I.001Action
-      internalID: -6429406902447020450
-      firstFrame: 300
-      lastFrame: 416
+      takeName: BorrachoRIG|BorrachoAction
+      internalID: -3250220888191510506
+      firstFrame: 180
+      lastFrame: 240
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
       cycleOffset: 0
       loop: 0
       hasAdditiveReferencePose: 0
-      loopTime: 0
-      loopBlend: 0
+      loopTime: 1
+      loopBlend: 1
       loopBlendOrientation: 0
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
@@ -146,7 +88,36 @@ ModelImporter:
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 250
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: run
+      takeName: BorrachoRIG|BorrachoAction
+      internalID: 5070434211439607545
+      firstFrame: 300
+      lastFrame: 330
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
     isReadable: 0
   meshes:
     lODScreenPercentages: []
