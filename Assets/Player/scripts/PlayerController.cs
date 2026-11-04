@@ -9,9 +9,11 @@ public class PlayerController : MonoBehaviour
     private Rigidbody rb; // Referencia al Rigidbody del jugador
     private bool enSuelo = true; // Variable para controlar si el jugador está en el suelo
 
+// Animaciones
+    private Animator animator;
+
 //Direcciones relativas a la cmara
     private Vector3 forward, right; // Vectores de dirección para el movimiento del jugador
-
 
 // Referencias a otros scripts
     public CamaraController scriptCamara; // Referencia directa al script de la cámara
@@ -47,6 +49,7 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
+        animator = GetComponent<Animator>();
 
         forward = Camera.main.transform.forward;
         forward.y = 0; // Mantener la altura del jugador constante
@@ -60,6 +63,7 @@ public class PlayerController : MonoBehaviour
         {
             scriptCamara = FindAnyObjectByType<CamaraController>();
         }
+
     }
 
 // Update is called once per frame
@@ -72,6 +76,11 @@ public class PlayerController : MonoBehaviour
         ProcesarDash();
         procesarAtrapar();
         procesarInvocacionPerro();
+
+        if (animator != null)
+        {
+            animator.SetBool("stun", !bajoControlJugador);
+        }
     }
 
     void ProcesarMovimiento() // Metodo para procesar el movimiento del jugador
@@ -94,11 +103,11 @@ public class PlayerController : MonoBehaviour
 
         // Ajustar la velocidad de movimiento según si el jugador está corriendo o caminando
         float velocidadActual = speed;
- 
-        // Si el jugador presiona la tecla Shift, aumentar la velocidad de movimiento
-        if (Input.GetKey(KeyCode.LeftShift))
+        bool runSpeed = Input.GetKey(KeyCode.LeftShift);
+
+        if (runSpeed)
         {
-            velocidadActual = runSpeed;
+            velocidadActual = this.runSpeed;
         }
 
         rb.linearVelocity = new Vector3(movement.x * velocidadActual, rb.linearVelocity.y, movement.z * velocidadActual);
@@ -108,6 +117,17 @@ public class PlayerController : MonoBehaviour
         {
             Quaternion nuevaRotacion = Quaternion.LookRotation(movement);
             transform.rotation = Quaternion.Slerp(transform.rotation, nuevaRotacion, Time.deltaTime * 10f);
+        }
+
+        // Logica para actualizar las animaciones del jugador
+        if (animator != null)
+        {
+            float valorAnimacion = movement.magnitude*(runSpeed ? 2f : 1f); // Ajustar la velocidad de la animación según si el jugador está corriendo o caminando
+            if (haciendoDash)
+            {
+                valorAnimacion = 2f; // Durante el dash, la animación de correr se reproduce a velocidad completa
+            }
+            animator.SetFloat("movement", valorAnimacion);
         }
     }
 
@@ -125,6 +145,10 @@ public class PlayerController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Q) && dashDisponible && !haciendoDash) // Verificar si el jugador puede hacer dash y no está haciendo uno actualmente
         {
+            if (animator != null)
+            {
+                animator.SetTrigger("dash"); // Activar la animación de dash
+            }
             StartCoroutine(Dash());
         }
     }
@@ -160,10 +184,14 @@ public class PlayerController : MonoBehaviour
             // Si se encuentra al menos un NPC, atrapar al primero encontrado
             if (NPCsEncontrados.Length > 0)
             {
-                NPCIdentity npc = NPCsEncontrados[0].GetComponent<NPCIdentity>();
+                NPCIdentity npc = NPCsEncontrados[0].GetComponentInParent<NPCIdentity>();
                 
                 if (npc != null)
                 {
+                    if (animator != null)
+                    {
+                        animator.SetTrigger("attack");
+                    }
                     StartCoroutine(AtraparNPC(npc));
                 }
             }

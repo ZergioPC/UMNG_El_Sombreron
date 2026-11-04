@@ -5,7 +5,7 @@ using UnityEngine;
 public class NPCIdentity : MonoBehaviour
 {
     public enum TipoNPC
-{
+    {
         Borracho,   // Malo: Tambalea (+10 pts)
         Peleador,   // Malo: Ataca/Empuja (+25 pts)
         Tramposo,   // Malo: Huye rápido/desaparece (+40 pts)
@@ -19,11 +19,18 @@ public class NPCIdentity : MonoBehaviour
 
     // Visual
     public Color colorOculto = Color.clear;     // Todos son iguales
-    public Color colorObjetivo = Color.green;  // Se revela si es (Borracho, Peleador, Tramposo)
-    public Color colorInocente = Color.red;    // Se revela si es (Aldeano real o Dama)
+    public Color colorObjetivo = new Color(1f, 0.2663138f, 0f);  // Se revela si es (Borracho, Peleador, Tramposo)
+    public Color colorInocente = new Color(0.1320967f, 0.3342422f, 0.5084495f);    // Se revela si es (Aldeano real o Dama)
 
     public float duracionRevelacion = 5f; // Duración de la revelación en segundos
 
+    // Variables de rastro
+    public GameObject rastroVisual;
+    public float duracionRastro = 3f; // Duración del rastro en segundos
+    public float intervaloRastro = 0.5f; // Intervalo entre cada rastro en segundos
+    private Vector3 ultimaPosicionRastro;
+
+    // Variables de estado
     private Renderer[] renderers;
     private bool estaRevelado = false;
     private Coroutine corrutinaOcultar;
@@ -31,7 +38,27 @@ public class NPCIdentity : MonoBehaviour
     void Start()
     {
         renderers = GetComponentsInChildren<Renderer>();
-        ActualizarPuntosSegunRol();     
+        ActualizarPuntosSegunRol();
+        ultimaPosicionRastro = transform.position; 
+    }
+
+    void Update()
+    {
+        //Solo los NPCs culpables dejan rastro visual
+        if (esCulpable() && rastroVisual != null)
+        {
+            //si el NPC se mueve lo suficiente, se genera un rastro visual
+            if (Vector3.Distance(transform.position, ultimaPosicionRastro) >= 1f)
+            {
+                duracionRastro += Time.deltaTime;
+                if (duracionRastro >= intervaloRastro)
+                {
+                    Instantiate(rastroVisual, transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                    duracionRastro = 0f;
+                }
+            }
+            ultimaPosicionRastro = transform.position;
+        }
     }
 
     void ActualizarPuntosSegunRol()
