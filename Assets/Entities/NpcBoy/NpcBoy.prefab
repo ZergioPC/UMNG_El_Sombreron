@@ -299,7 +299,7 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
@@ -310,7 +310,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 899445723432202179}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 1436c2143d537dc4a953085c9c66075c, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -357,8 +357,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cefa01d255d49464198e430cb549eda4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCBehavior
+  estadoActual: 0
   radioPatrulla: 10
   tiempoCambioDestino: 5
+  distanciaDeteccion: 2
+  velocidadHuida: 5
+  velocidadNormal: 3.5
+  tiempoHuyendo: 0
 --- !u!195 &1588949882095964171
 NavMeshAgent:
   m_ObjectHideFlags: 0

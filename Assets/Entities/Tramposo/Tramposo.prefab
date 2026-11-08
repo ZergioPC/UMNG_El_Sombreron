@@ -30,7 +30,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42d150789494e4cbdb5d85d101d4e396, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 42d150789494e4cbdb5d85d101d4e396, type: 3}
       propertyPath: m_LocalPosition.z
@@ -403,6 +403,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 42d150789494e4cbdb5d85d101d4e396, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2064553743076053641}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 42d150789494e4cbdb5d85d101d4e396, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6859132092410132211}
   m_SourcePrefab: {fileID: 100100000, guid: 42d150789494e4cbdb5d85d101d4e396, type: 3}
 --- !u!1 &1662621051514493638 stripped
 GameObject:
@@ -432,7 +435,7 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
@@ -496,8 +499,8 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 2
-  m_BaseOffset: 0
+  m_Height: 0.5
+  m_BaseOffset: 0.2
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!114 &2064553743076053641
@@ -517,3 +520,25 @@ MonoBehaviour:
   radioAlerta: 8
   distanciaEscape: 2.5
   efectoHumoPrefab: {fileID: 0}
+--- !u!95 &6859132092410132211
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1662621051514493638}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 6ee65714584013946851aeac8d46dd5b, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

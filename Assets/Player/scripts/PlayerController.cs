@@ -76,11 +76,6 @@ public class PlayerController : MonoBehaviour
         ProcesarDash();
         procesarAtrapar();
         procesarInvocacionPerro();
-
-        if (animator != null)
-        {
-            animator.SetBool("stun", !bajoControlJugador);
-        }
     }
 
     void ProcesarMovimiento() // Metodo para procesar el movimiento del jugador
@@ -286,6 +281,21 @@ public class PlayerController : MonoBehaviour
 
         yield return new WaitForSeconds(tiempoCooldownInvocacion);
         invocacionDisponible = true;
+    }
+
+    // Metodo para establecer el estado de stun del jugador
+    public void EstablecerStun(bool estado)
+    {
+        bajoControlJugador = !estado;
+        if (estado && rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+        }
+
+        if (animator != null)
+        {
+            animator.SetBool("stun", estado);
+        }
     }
 
     // Metodo para detectar si el jugador está en contacto con el suelo
