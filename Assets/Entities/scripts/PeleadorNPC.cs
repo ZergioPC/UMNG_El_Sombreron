@@ -21,7 +21,7 @@ public class PeleadorNPC : MonoBehaviour
 // parametros de comportamiento del peleador
     public float distanciaDeteccion = 5f; // Distancia a la que el NPC detecta al jugador
     public float distanciaAtaque = 1.5f; // Distancia a la que el NPC puede atacar al jugador
-    public float fuerzaEmpuje = 2f; // Fuerza con la que el NPC empuja al jugador
+    public float fuerzaEmpuje = 3f; // Fuerza con la que el NPC empuja al jugador
    
 // Cooldown de empuje
     public float tiempoCooldownEmpuje = 2f; // Tiempo de cooldown entre empujes
@@ -59,10 +59,8 @@ public class PeleadorNPC : MonoBehaviour
             Patrullar();
             return;
         }
-
         float distanciaJugador = Vector3.Distance(transform.position, jugador.position);
 
-        // Comportamiento del peleador
         // Si el jugador está muy cerca, encara y ataca
         if (distanciaJugador <= distanciaAtaque)
         {
@@ -112,30 +110,61 @@ public class PeleadorNPC : MonoBehaviour
 
     void ProcesarAtaque()
     {
-        // Verificar si el jugador está haciendo dash
-        PlayerController playerScript = jugador.GetComponent<PlayerController>();
-        bool jugadorEnDash = playerScript != null && playerScript.haciendoDash;
-
-        // Evitar empujar al jugador si está haciendo dash
-        if (jugadorEnDash) return;
-
-        // Empujar al jugador si no está en cooldown
-        if (Time.time >= tiempoCooldownEmpuje)
+        if (Time.time >= siguienteEmpuje)
         {
+            if (animator != null)
+            {
+                animator.SetTrigger("attack");
+            }
+            StartCoroutine(EsperarImpacto());
+            siguienteEmpuje = Time.time + tiempoCooldownEmpuje; // Reiniciar el cooldown de empuje
+        }
+    }
+
+    IEnumerator EsperarImpacto()
+    {
+        float tiempoImpacto = 40f/60f; 
+        yield return new WaitForSeconds(tiempoImpacto); // Esperar un tiempo antes de ejecutar el empuje
+        EjecutarAtaque();
+    }
+
+    void EjecutarAtaque()
+    {
+        if (jugador == null) return;
+        float distanciaJugador = Vector3.Distance(transform.position, jugador.position);
+
+        if (distanciaJugador <= distanciaAtaque + 0.5f)
+        {
+            PlayerController playerScript = jugador.GetComponent<PlayerController>();
+            bool jugadorEnDash = playerScript != null && playerScript.haciendoDash;
+
+            if (jugadorEnDash) return;
+
             Rigidbody rbJugador = jugador.GetComponent<Rigidbody>();
             if (rbJugador != null)
             {
-                if (animator != null)
+                if (playerScript != null)
                 {
-                    animator.SetTrigger("attack");
+                    playerScript.EstablecerStun(true);
                 }
+                rbJugador.linearVelocity = Vector3.zero;
                 Vector3 direccionEmpuje = (jugador.position - transform.position).normalized;
+                direccionEmpuje.y = 0.4f; // Mantener el empuje en el plano horizontal
                 rbJugador.AddForce(direccionEmpuje * fuerzaEmpuje, ForceMode.Impulse);
-                siguienteEmpuje = Time.time + tiempoCooldownEmpuje; // Reiniciar el cooldown de empuje
+                
+                StartCoroutine(LiberarStun(playerScript, 1f)); 
             }
         }
     }
 
+    IEnumerator LiberarStun(PlayerController playerScript, float duracion)
+    {
+        yield return new WaitForSeconds(duracion);
+        if (playerScript != null)
+        {
+            playerScript.EstablecerStun(false);
+        }
+    }
     void MoverNuevoPunto()
     {
         Vector3 randomDirection = Random.insideUnitSphere * radioPatrulla;
@@ -145,16 +174,5 @@ public class PeleadorNPC : MonoBehaviour
         {
             agent.SetDestination(hit.position);
         }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        // Dibujar el radio de patrulla en la escena para visualización
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, distanciaDeteccion);
-
-        // Dibujar el radio de detección del jugador
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, distanciaAtaque);
     }
 }

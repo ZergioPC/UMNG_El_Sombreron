@@ -34,6 +34,7 @@ public class NPCIdentity : MonoBehaviour
     private Renderer[] renderers;
     private bool estaRevelado = false;
     private Coroutine corrutinaOcultar;
+    public bool EstaRevelado => estaRevelado;
 
     void Start()
     {
