@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class UIMenuPrincipal : MonoBehaviour {
 
@@ -16,6 +17,10 @@ public class UIMenuPrincipal : MonoBehaviour {
 
 	void Awake()
 	{
+		Time.timeScale = 1f;
+		AudioListener.pause = false;
+		Cursor.visible = true;
+		Cursor.lockState = CursorLockMode.None;
 		menuPanel.SetActive (false);
 		menuInfo.SetActive (false);
 		menuSettings.SetActive (false);
@@ -36,7 +41,9 @@ public class UIMenuPrincipal : MonoBehaviour {
 	// Botones Menu Principal
 	public void OnPlay()
 	{
-		Debug.Log ("Jugar el Juego");
+		Time.timeScale = 1f;
+		AudioListener.pause = false;
+		SceneManager.LoadScene("Gameplay");
 	}
 
 	public void OnInfo()
@@ -74,6 +81,6 @@ public class UIMenuPrincipal : MonoBehaviour {
 
 	public void OnExit()
 	{
-		Debug.Log ("Chao");
+		Application.Quit();
 	}
 }
