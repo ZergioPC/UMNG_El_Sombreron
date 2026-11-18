@@ -8,34 +8,47 @@ using UnityEngine.AI;
 public class BorrachoNPC : MonoBehaviour
 {
     private NavMeshAgent agent;
+    private Animator animator;
     private NPCIdentity identidad;
 
-    [Header("Parámetros del Borracho")]
-    public float velocidadLenta = 1.8f;      // Camina muy despacio
-    public float radioZigzag = 4f;           // Radio corto para cambiar de dirección seguido
-    public float tiempoCambioDireccion = 1.5f; // Cambia de rumbo frecuentemente
-    private float temporizadorCambio = 0f;
+// Estados del NPC
+    public enum EstadoNPC {Patrullando, Panico, Huyendo, EnRefugio}
+    public EstadoNPC estadoActual = EstadoNPC.Patrullando;
 
-    [Header("Efecto de Bamboleo / Tambaleo Visual")]
-    public float velocidadTambaleo = 4f;     // Qué tan rápido se balancea
-    public float anguloTambaleo = 8f;        // Grados de inclinación a los lados
+//Parametros del borracho
+    public float velocidadLenta = 1.8f; // Velocidad de movimiento del borracho
+    public float velocidadHuida = 5f;
+    public float radioZigzag = 4f; // Radio de movimiento errante para generar puntos aleatorios cercanos
+    public float tiempoCambioDireccion = 1.5f; // Tiempo en segundos para cambiar de dirección errante
+    private float temporizadorCambio = 0f; // Temporizador para controlar el tiempo de cambio de dirección errante
+
+//Parametros panico/reaccion
+    public float distanciaAlarma = 6f;
+    public float tiempoRetardo = 1.2f;
+    private Transform jugador;
+    private Transform iglesiaRefugio;
+    private float Reaccion = 0f;
+    private float tiempoHuyendo = 0f;
+
+//Efecto de tambaleo visual
+    public float velocidadTambaleo = 4f;
+    public float anguloTambaleo = 8f;       
     private Transform modeloVisual;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+        animator = GetComponent<Animator>();
         identidad = GetComponent<NPCIdentity>();
 
-        // Forzar tipo a Borracho en la identidad
         identidad.tipo = NPCIdentity.TipoNPC.Borracho;
 
-        // Intentar obtener el hijo donde está el modelo 3D para inclinarlo visualmente
-        if (transform.childCount > 0)
-        {
-            modeloVisual = transform.GetChild(0);
-        }
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null) jugador = playerObj.transform;
 
-        // Posicionar en el NavMesh
+        Renderer renderModelo = GetComponentInChildren<Renderer>();
+        if (renderModelo != null) modeloVisual = renderModelo.transform;
+
         NavMeshHit hit;
         if (NavMesh.SamplePosition(transform.position, out hit, 5.0f, NavMesh.AllAreas))
         {
@@ -49,39 +62,152 @@ public class BorrachoNPC : MonoBehaviour
     void Update()
     {
         if (!agent.isOnNavMesh) return;
+        if (animator != null)
+        {
+            animator.SetFloat("movement", agent.velocity.magnitude);
+        }
 
-        // 1. Lógica de movimiento en zigzag / errante
+        switch (estadoActual)
+        {
+            case EstadoNPC.Patrullando:
+            PatrullaErrante();
+            VerificarAlarmaJugador();
+            AplicarTambaleoVisual();
+            break;
+
+            case EstadoNPC.Panico:
+            agent.isStopped = true;
+            Reaccion += Time.deltaTime;
+            AplicarTambaleoVisual();
+            if  (Reaccion >= tiempoRetardo) HuidaIglesia();
+            break;
+
+            case EstadoNPC.Huyendo:
+            GestionarHuida();
+            break;
+
+            case EstadoNPC.EnRefugio:
+            break;
+
+        }
+    }
+
+    void PatrullaErrante()
+    {
         temporizadorCambio += Time.deltaTime;
-
         if (temporizadorCambio >= tiempoCambioDireccion || agent.remainingDistance < 0.5f)
         {
             MoverNuevaposicionErrante();
             temporizadorCambio = 0f;
         }
-
-        // 2. Tambaleo visual (inclinación lateral para simular borrachera)
-        AplicarTambaleoVisual();
     }
 
     void MoverNuevaposicionErrante()
     {
-        // Genera un punto aleatorio muy cercano para cambiar de dirección bruscamente
         Vector3 direccionAleatoria = Random.insideUnitSphere * radioZigzag + transform.position;
         NavMeshHit hit;
-
         if (NavMesh.SamplePosition(direccionAleatoria, out hit, radioZigzag, NavMesh.AllAreas))
         {
             agent.SetDestination(hit.position);
         }
     }
 
+    void VerificarAlarmaJugador()
+    {
+        if (jugador == null) return;
+        float distanciaJugador = Vector3.Distance(transform.position, jugador.position);
+        if (distanciaAlarma >= distanciaJugador)
+        {
+            estadoActual = EstadoNPC.Panico;
+            Reaccion = 0f;
+        }
+    }
+
+    void HuidaIglesia()
+    {
+        BuscarIglesia();
+        if (iglesiaRefugio != null)
+        {
+            estadoActual = EstadoNPC.Huyendo;
+            tiempoHuyendo = 0f;
+            agent.isStopped = false;
+            agent.speed = velocidadHuida;
+            agent.SetDestination(iglesiaRefugio.position);
+        }
+        else
+        {
+            estadoActual = EstadoNPC.Patrullando;
+            agent.isStopped = false;
+            agent.speed = velocidadLenta;
+        }
+    }
+
+    void GestionarHuida()
+    {
+        tiempoHuyendo += Time.deltaTime;
+        if (tiempoHuyendo > 1f && !agent.pathPending && agent.remainingDistance <= 1f)
+        {
+            estadoActual = EstadoNPC.EnRefugio;
+            agent.isStopped = true;
+            StartCoroutine(EntrarRefugio());
+        }
+    }
+
+    IEnumerator EntrarRefugio()
+    {
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = false;
+
+        float tiempoTranscurrido = 0f;
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+
+        while (tiempoTranscurrido < 0.4f)
+        {
+            tiempoTranscurrido += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, tiempoTranscurrido / 0.4f);
+
+            foreach (Renderer rend in renderers)
+            {
+                foreach (Material mat in rend.materials)
+                {
+                    if (mat.HasProperty("_Color"))
+                    {
+                        Color c = mat.color;
+                        c.a = alpha;
+                        mat.color = c;
+                    }
+                }
+            }
+            yield return null;
+        }
+
+        gameObject.SetActive(false);
+    }
+
+    void BuscarIglesia()
+    {
+        GameObject[] iglesias = GameObject.FindGameObjectsWithTag("Iglesia");
+        float distanciaMinima = Mathf.Infinity;
+        Transform iglesiaCercana = null;
+
+        foreach (GameObject iglesia in iglesias)
+        {
+            float dist = Vector3.Distance(transform.position, iglesia.transform.position);
+            if (dist < distanciaMinima)
+            {
+                distanciaMinima = dist;
+                iglesiaCercana = iglesia.transform;
+            }
+        }
+        iglesiaRefugio = iglesiaCercana;
+    }
+
     void AplicarTambaleoVisual()
     {
-        // Si el borracho se está moviendo, balanceamos suavemente el modelo visual
-        if (agent.velocity.magnitude > 0.1f && modeloVisual != null)
+        if(modeloVisual != null)
         {
-            float zTilt = Mathf.Sin(Time.time * velocidadTambaleo) * anguloTambaleo;
-            modeloVisual.localRotation = Quaternion.Euler(0, modeloVisual.localRotation.eulerAngles.y, zTilt);
+            float zTilt = Mathf.Sin(Time.time * (velocidadTambaleo * 2.5f)) * (anguloTambaleo * 1.5f);
+            modeloVisual.localRotation = Quaternion.identity * Quaternion.Euler(0f, 0f, zTilt);
         }
     }
 }

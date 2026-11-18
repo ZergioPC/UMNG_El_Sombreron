@@ -4,24 +4,30 @@ using UnityEngine;
 
 public class PerroController : MonoBehaviour
 {
+// Referencias a componentes del perro
+    private Animator animator;
     private Rigidbody rb;
     private bool estaActivo = false;
     public Transform jugador;
 
-    // Variables de seguimiento del jugador
+// Variables de seguimiento del jugador
     public Vector3 offsetSeguimiento = new Vector3(-1.5f, 0, -1.5f);
     public float velocidadSeguimiento = 10f;
 
-    // Variables de movimiento del perro
+// Variables de movimiento del perro
     public float velocidad = 8f;
     public float rangoDeteccion = 15f;
     public LayerMask capaNPC;
+
+// Habilidades del perro
+    public float rangoAturdimiento = 2.5f;
 
     private Vector3 forward, right; // Vectores de dirección para el movimiento del perro
 
     void Start()
     {
-        rb = GetComponent<Rigidbody>();        
+        rb = GetComponent<Rigidbody>();
+        animator = GetComponent<Animator>();     
         DesactivarPerro();
     }
 
@@ -32,6 +38,7 @@ public class PerroController : MonoBehaviour
             ActualizarCamara();
             ProcesarMovimientoPerro();
             BuscarNPCs();
+            ProcesarAturdimiento();
         }
         else
         {
@@ -114,6 +121,10 @@ public class PerroController : MonoBehaviour
             Quaternion nuevaRotacion = Quaternion.LookRotation(movement);
             transform.rotation = Quaternion.Slerp(transform.rotation, nuevaRotacion, Time.deltaTime * 10f);
         }
+        if (animator != null)
+        {
+            animator.SetFloat("movement", movement.magnitude);
+        }
     }
 
     void BuscarNPCs()
@@ -128,6 +139,30 @@ public class PerroController : MonoBehaviour
             if (npc != null)
             {
                 npc.RevelarNPC();
+            }
+        }
+    }
+
+    void ProcesarAturdimiento()
+    {
+        if (Input.GetMouseButtonDown(0)) // Botón izquierdo del ratón
+        {
+            if (animator != null)
+            {
+                animator.SetTrigger("attack");
+            }
+
+            // Detectar NPCs dentro del rango de aturdimiento
+            Collider[] npcsEncontrados = Physics.OverlapSphere(transform.position, rangoAturdimiento, capaNPC);
+
+            // Aturdir a cada NPC encontrado
+            foreach (Collider npcCollider in npcsEncontrados)
+            {
+                NPCIdentity npc = npcCollider.GetComponentInParent<NPCIdentity>();
+                if (npc != null)
+                {
+                    npc.RevelarNPC();
+                }
             }
         }
     }

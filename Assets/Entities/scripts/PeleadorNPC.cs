@@ -8,29 +8,30 @@ using UnityEngine.AI;
 public class PeleadorNPC : MonoBehaviour
 {
 // Referencias a componentes
-    private NPCIdentity identity;
     private NavMeshAgent agent;
+    private Animator animator;
     private Transform jugador;
 
 // parametros de patrulla
-    public float radioPatrulla = 3f;
-    public float velocidadPatrulla = 1.5f;
+    public float radioPatrulla = 8f; // Radio de patrulla alrededor del punto inicial
+    public float tiempoEspera = 2f; // Tiempo de espera en segundos antes de elegir un nuevo destino
+    private float temporizadorEspera = 0f; // Temporizador para controlar el tiempo de espera antes de elegir un nuevo destino
+    public float velocidadPatrulla = 1.5f; // Velocidad de patrulla del NPC
 
 // parametros de comportamiento del peleador
-    public float distanciaEmpuje = 3f;
-    public float fuerzaEmpuje = 2f;
-    public float tiempoEmpuje = 3f;
-    public float tiempoCooldownEmpuje = 1f;
-
+    public float distanciaDeteccion = 5f; // Distancia a la que el NPC detecta al jugador
+    public float distanciaAtaque = 1.5f; // Distancia a la que el NPC puede atacar al jugador
+    public float fuerzaEmpuje = 3f; // Fuerza con la que el NPC empuja al jugador
+   
+// Cooldown de empuje
+    public float tiempoCooldownEmpuje = 2f; // Tiempo de cooldown entre empujes
+    private float siguienteEmpuje = 0f; // Tiempo en el que el NPC puede empujar nuevamente al jugador
 
     void Start()
     {
         // Obtener referencias a los componentes necesarios
-        identity = GetComponent<NPCIdentity>();
         agent = GetComponent<NavMeshAgent>();
-
-        //Forzar que el tipo de NPC sea Peleador
-        identity.tipo = NPCIdentity.TipoNPC.Peleador; 
+        animator = GetComponent<Animator>();
 
         // Encontrar al jugador en la escena
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -38,39 +39,61 @@ public class PeleadorNPC : MonoBehaviour
         {
             jugador = playerObj.transform;
         }
-
-        // Asegurarse de que el NPC esté en la malla de navegación
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(transform.position, out hit, 5.0f, NavMesh.AllAreas))
-        {
-            agent.Warp(hit.position);
-        }
-
-        // Iniciar el movimiento del NPC
-        agent.speed = velocidadPatrulla;
-        agent.isStopped = false;
-        MoverNuevoPunto();
+        MoverNuevoPunto(); // Elegir un nuevo punto de patrulla al inicio
     }
 
     // Update is called once per frame
     void Update()
     {
         // Asegurarse de que el jugador y el agente estén disponibles
-        if (jugador == null || !agent.isOnNavMesh) return;
+        if (agent == null || !agent.isOnNavMesh) return;
+
+        if (animator != null)
+        {
+            animator.SetFloat("movement", agent.velocity.magnitude);
+        }
+
+        //Si no hay jugadores asignados, el NPC patrulla normalmente
+        if (jugador == null)
+        {
+            Patrullar();
+            return;
+        }
         float distanciaJugador = Vector3.Distance(transform.position, jugador.position);
 
-        // Comportamiento del peleador
-        if (distanciaJugador < distanciaEmpuje)
+        // Si el jugador está muy cerca, encara y ataca
+        if (distanciaJugador <= distanciaAtaque)
         {
+            agent.isStopped = true;
             EncararJugador();
             ProcesarAtaque();
         }
+        // Si esta en rango de vision lo persigue
+        else if (distanciaJugador <= distanciaDeteccion)
+        {
+            agent.isStopped = false;
+            agent.speed = velocidadPatrulla * 2f; // Aumentar la velocidad al perseguir
+            agent.SetDestination(jugador.position);
+        }
+        // Si esta lejos, continuar patrullando normal
         else
         {
             agent.isStopped = false;
-            if (agent.remainingDistance < 0.5f)
+            agent.speed = velocidadPatrulla; // Restaurar la velocidad normal de patrulla
+            Patrullar();
+        }
+    }
+
+    void Patrullar()
+    {
+        // Si el NPC ha llegado a su destino, esperar un tiempo antes de elegir un nuevo destino
+        if (!agent.pathPending && agent.remainingDistance < 0.5f)
+        {
+            temporizadorEspera += Time.deltaTime;
+            if (temporizadorEspera >= tiempoEspera)
             {
                 MoverNuevoPunto();
+                temporizadorEspera = 0f; // Reiniciar el temporizador de espera
             }
         }
     }
@@ -87,36 +110,61 @@ public class PeleadorNPC : MonoBehaviour
 
     void ProcesarAtaque()
     {
-        // Verificar si el jugador está haciendo dash
-        PlayerController playerScript = jugador.GetComponent<PlayerController>();
-        bool jugadorEnDash = playerScript != null && playerScript.haciendoDash;
-
-        // Evitar empujar al jugador si está haciendo dash
-        if (jugadorEnDash)
+        if (Time.time >= siguienteEmpuje)
         {
-            agent.isStopped = true;
-            return;
+            if (animator != null)
+            {
+                animator.SetTrigger("attack");
+            }
+            StartCoroutine(EsperarImpacto());
+            siguienteEmpuje = Time.time + tiempoCooldownEmpuje; // Reiniciar el cooldown de empuje
         }
+    }
 
-        // Empujar al jugador si no está en cooldown
-        if (Time.time >= tiempoCooldownEmpuje + tiempoEmpuje)
+    IEnumerator EsperarImpacto()
+    {
+        float tiempoImpacto = 40f/60f; 
+        yield return new WaitForSeconds(tiempoImpacto); // Esperar un tiempo antes de ejecutar el empuje
+        EjecutarAtaque();
+    }
+
+    void EjecutarAtaque()
+    {
+        if (jugador == null) return;
+        float distanciaJugador = Vector3.Distance(transform.position, jugador.position);
+
+        if (distanciaJugador <= distanciaAtaque + 0.5f)
         {
+            PlayerController playerScript = jugador.GetComponent<PlayerController>();
+            bool jugadorEnDash = playerScript != null && playerScript.haciendoDash;
+
+            if (jugadorEnDash) return;
+
             Rigidbody rbJugador = jugador.GetComponent<Rigidbody>();
             if (rbJugador != null)
             {
-                // Empujar al jugador hacia atrás y un poco hacia arriba
-                Vector3 direccionEmpuje = (jugador.position - transform.position).normalized + Vector3.up * 0.3f;
+                if (playerScript != null)
+                {
+                    playerScript.EstablecerStun(true);
+                }
+                rbJugador.linearVelocity = Vector3.zero;
+                Vector3 direccionEmpuje = (jugador.position - transform.position).normalized;
+                direccionEmpuje.y = 0.4f; // Mantener el empuje en el plano horizontal
                 rbJugador.AddForce(direccionEmpuje * fuerzaEmpuje, ForceMode.Impulse);
                 
-                // Reiniciar el cooldown del empuje
-                tiempoCooldownEmpuje = Time.time + tiempoEmpuje;
+                StartCoroutine(LiberarStun(playerScript, 1f)); 
             }
         }
-        
-        // Detener el movimiento del NPC mientras empuja
-        agent.isStopped = false;
     }
 
+    IEnumerator LiberarStun(PlayerController playerScript, float duracion)
+    {
+        yield return new WaitForSeconds(duracion);
+        if (playerScript != null)
+        {
+            playerScript.EstablecerStun(false);
+        }
+    }
     void MoverNuevoPunto()
     {
         Vector3 randomDirection = Random.insideUnitSphere * radioPatrulla;

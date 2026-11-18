@@ -1,79 +1,64 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-public class UIMenuPrincipal : MonoBehaviour {
+public class UIMenuPrincipal : MonoBehaviour
+{
+    [Header("Referencias UI existentes")]
+    [SerializeField] private GameObject menuPanel;
+    [SerializeField] private GameObject menuInfo;
+    [SerializeField] private GameObject menuSettings;
+    [SerializeField] private GameObject menuCredits;
 
-	[Header("Referencias UI")]
-	[SerializeField] private GameObject menuPanel;
+    [Header("Escenas del menú")]
+    [SerializeField] private string escenaInicio = "Scene_Inicio";
+    [SerializeField] private string escenaNivel = "Gameplay";
+    [SerializeField] private string escenaInstrucciones = "Scene_Instrucciones";
+    [SerializeField] private string escenaOpciones = "Scene_Opciones";
+    [SerializeField] private string escenaCreditos = "Scene_Crediitos";
 
+    private void Awake()
+    {
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+        if (menuPanel != null) menuPanel.SetActive(false);
+        if (menuInfo != null) menuInfo.SetActive(false);
+        if (menuSettings != null) menuSettings.SetActive(false);
+        if (menuCredits != null) menuCredits.SetActive(false);
+    }
 
-	[Header("Submenus")]
-	[SerializeField] private GameObject menuInfo;
-	[SerializeField] private GameObject menuSettings;
-	[SerializeField] private GameObject menuCredits;
+    public void ShowPanel()
+    {
+        if (menuPanel != null) menuPanel.SetActive(true);
+    }
 
+    public void OnClosePanel()
+    {
+        if (SceneManager.GetActiveScene().name != escenaInicio) OnBack();
+        else if (menuPanel != null) menuPanel.SetActive(false);
+    }
 
-	void Awake()
-	{
-		menuPanel.SetActive (false);
-		menuInfo.SetActive (false);
-		menuSettings.SetActive (false);
-		menuCredits.SetActive (false);
-	}
+    public void OnPlay() => CargarEscena(escenaNivel);
+    public void OnInfo() => CargarEscena(escenaInstrucciones);
+    public void OnSettings() => CargarEscena(escenaOpciones);
+    public void OnCredits() => CargarEscena(escenaCreditos);
+    public void OnBack() => CargarEscena(escenaInicio);
 
-	// Panel methods
-	public void ShowPanel()
-	{
-		menuPanel.SetActive (true);
-	}
+    private void CargarEscena(string escena)
+    {
+        if (SceneManager.GetActiveScene().name == escena) return;
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
+        SceneManager.LoadScene(escena);
+    }
 
-	public void OnClosePanel()
-	{
-		menuPanel.SetActive (false);
-	}
-
-	// Botones Menu Principal
-	public void OnPlay()
-	{
-		Debug.Log ("Jugar el Juego");
-	}
-
-	public void OnInfo()
-	{
-		Debug.Log ("Instrucciones");
-
-		menuInfo.SetActive (true);
-		menuSettings.SetActive (false);
-		menuCredits.SetActive (false);
-
-		ShowPanel ();
-	}
-
-	public void OnSettings()
-	{
-		Debug.Log ("Ajustes");
-
-		menuInfo.SetActive (false);
-		menuSettings.SetActive (true);
-		menuCredits.SetActive (false);
-
-		ShowPanel ();
-	}
-
-	public void OnCredits()
-	{
-		Debug.Log ("Creditos");
-
-		menuInfo.SetActive (false);
-		menuSettings.SetActive (false);
-		menuCredits.SetActive (true);
-
-		ShowPanel ();
-	}
-
-	public void OnExit()
-	{
-		Debug.Log ("Chao");
-	}
+    public void OnExit()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
 }

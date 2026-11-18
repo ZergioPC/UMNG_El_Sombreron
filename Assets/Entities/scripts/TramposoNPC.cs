@@ -9,15 +9,16 @@ public class TramposoNPC : MonoBehaviour
 {
     private NavMeshAgent agent;
     private NPCIdentity identidad;
+    private Animator animator;
     private Transform jugador;
 
-    [Header("Parámetros de Huida")]
+// Parametros de huida
     public float velocidadTranquilo = 2.5f;
     public float velocidadHuida = 7f;
     public float radioAlerta = 8f;        // Distancia a la que detecta al Sombrerón y empieza a huir
     public float distanciaEscape = 2.5f;   // Si el Sombrerón se acerca sin Dash a esta distancia, desaparece
 
-    [Header("Efecto de Desaparición")]
+//Efecto de desaparicion
     public GameObject efectoHumoPrefab;   // Opcional: Sistema de partículas de humo al desaparecer
 
     private bool aturdido = false;
