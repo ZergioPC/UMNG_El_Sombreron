@@ -12,6 +12,10 @@ public class PlayerController : MonoBehaviour
 // Animaciones
     private Animator animator;
 
+// Fotograma en el que desaparece el NPC durante la animación de ataque
+    public int frameDesaparicionAtaque = 19;
+    public string nombreEstadoAtaque = "attack";
+
 //Direcciones relativas a la cmara
     private Vector3 forward, right; // Vectores de dirección para el movimiento del jugador
 
@@ -210,7 +214,7 @@ public class PlayerController : MonoBehaviour
 
         // Logica para atrapar al NPC (animacion)
         Vector3 posicionInicial = transform.position;
-        Vector3 posicionFinal = npc.transform.position;
+        Vector3 posicionFinal = npc != null ? npc.transform.position : transform.position;
         Vector3 direccionMirar = (posicionFinal - posicionInicial).normalized;
         direccionMirar.y = 0; // Mantener la rotación en el plano horizontal
         if (direccionMirar != Vector3.zero)
@@ -229,6 +233,9 @@ public class PlayerController : MonoBehaviour
             tiempoTranscurrido += Time.deltaTime;
             yield return null;
         }
+
+        // Esperar hasta llegar al fotograma indicado de la animación de ataque
+        yield return StartCoroutine(EsperarHastaFotogramaAtaque(frameDesaparicionAtaque));
 
         // Logica para atrapar culpable o inocente
         if (npc != null)
@@ -256,9 +263,61 @@ public class PlayerController : MonoBehaviour
             {
             puntuacionActual += bonificacionSerenata;
             }*/
-            Destroy(npc.gameObject); // Destruir el NPC atrapado
+            Destroy(npc.gameObject); // Destruir el NPC atrapado en el fotograma objetivo
         }
         bajoControlJugador = true;
+    }
+
+    private IEnumerator EsperarHastaFotogramaAtaque(int fotogramaObjetivo)
+    {
+        if (animator == null) yield break;
+
+        // Esperar hasta que el Animator entre al estado de ataque
+        float timeout = 1.5f;
+        while (timeout > 0f)
+        {
+            AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
+            if (info.IsName(nombreEstadoAtaque))
+            {
+                break;
+            }
+            timeout -= Time.deltaTime;
+            yield return null;
+        }
+
+        // Obtener FPS y duración real del clip actual
+        float fps = 30f;
+        float duracionClip = 1f;
+        AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
+        if (clips != null && clips.Length > 0 && clips[0].clip != null)
+        {
+            AnimationClip clip = clips[0].clip;
+            fps = clip.frameRate > 0f ? clip.frameRate : 30f;
+            duracionClip = clip.length > 0f ? clip.length : 1f;
+        }
+
+        // Calcular el progreso normalizado exacto del fotogramaObjetivo
+        float progresoObjetivo = (fotogramaObjetivo / fps) / duracionClip;
+
+        while (animator != null)
+        {
+            AnimatorStateInfo estado = animator.GetCurrentAnimatorStateInfo(0);
+            bool sigueEnAtaque = estado.IsName(nombreEstadoAtaque);
+
+            // Si ya salió del estado de ataque y no está en transición, no quedarse esperando
+            if (!sigueEnAtaque && !animator.IsInTransition(0))
+            {
+                break;
+            }
+
+            // Cuando el fotograma actual (normalizedTime) alcanza o supera el fotograma objetivo
+            if (sigueEnAtaque && estado.normalizedTime >= progresoObjetivo)
+            {
+                break;
+            }
+
+            yield return null;
+        }
     }
 
     void procesarInvocacionPerro() // Metodo para procesar la invocación del perro

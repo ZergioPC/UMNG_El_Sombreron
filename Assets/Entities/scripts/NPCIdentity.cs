@@ -18,7 +18,6 @@ public class NPCIdentity : MonoBehaviour
     public int puntosModificador = 15;
 
     // Visual
-    public Color colorOculto = Color.clear;     // Todos son iguales
     public Color colorObjetivo = new Color(1f, 0.2663138f, 0f);  // Se revela si es (Borracho, Peleador, Tramposo)
     public Color colorInocente = new Color(0.1320967f, 0.3342422f, 0.5084495f);    // Se revela si es (Aldeano real o Dama)
 
@@ -34,9 +33,11 @@ public class NPCIdentity : MonoBehaviour
 
     // Variables de estado
     private Renderer[] renderers;
+    private Color[] coloresOriginales;
     private bool estaRevelado = false;
     private Coroutine corrutinaOcultar;
     private TramposoNPC tramposoScript;
+    private PerroController perroController;
     public bool EstaRevelado => estaRevelado;
 
     public float alturaRastro = 0.15f;
@@ -45,13 +46,35 @@ public class NPCIdentity : MonoBehaviour
     {
         renderers = GetComponentsInChildren<Renderer>();
         tramposoScript = GetComponent<TramposoNPC>();
+        perroController = FindAnyObjectByType<PerroController>();
+
+        GuardarColoresOriginales();
         ActualizarPuntosSegunRol();
         ultimaPosicionRastro = transform.position;
     }
 
+    void GuardarColoresOriginales()
+    {
+        if (renderers == null) return;
+
+        coloresOriginales = new Color[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null && renderers[i].material != null)
+            {
+                coloresOriginales[i] = renderers[i].material.color;
+            }
+        }
+    }
 
     void Update()
     {
+        // Si está revelado, verificar si salió de la vista/rango del perro o si el perro se desactivó
+        if (estaRevelado && !EstaEnVistaDelPerro())
+        {
+            RestaurarVisualNormal();
+        }
+
         // Solo los NPCs culpables (y que no sean clon de Tramposo) dejan rastro cuando el perro olfatea
         bool puedeDejarRastro = esCulpable()
             && PerroController.estaOlfateando
@@ -70,7 +93,7 @@ public class NPCIdentity : MonoBehaviour
                     ? Quaternion.LookRotation(direccionRastro.normalized)
                     : transform.rotation;
 
-                GameObject instanciaRastro = Instantiate(rastroVisual, transform.position + Vector3.up * 0.5f, rotacionRastro);
+                GameObject instanciaRastro = Instantiate(rastroVisual, transform.position + Vector3.up * alturaRastro, rotacionRastro);
 
                 if (duracionVidaRastro > 0f)
                 {
@@ -81,6 +104,23 @@ public class NPCIdentity : MonoBehaviour
                 temporizadorRastro = 0f;
             }
         }
+    }
+
+    bool EstaEnVistaDelPerro()
+    {
+        if (perroController == null)
+        {
+            perroController = FindAnyObjectByType<PerroController>();
+            if (perroController == null) return false;
+        }
+
+        // Verificar si el perro está activo (sus renderers habilitados y dentro del rango de detección)
+        Renderer perroRenderer = perroController.GetComponentInChildren<Renderer>();
+        bool perroVisible = perroRenderer != null && perroRenderer.enabled;
+        if (!perroVisible) return false;
+
+        float distancia = Vector3.Distance(transform.position, perroController.transform.position);
+        return distancia <= perroController.rangoDeteccion;
     }
 
     void ActualizarPuntosSegunRol()
@@ -120,9 +160,29 @@ public class NPCIdentity : MonoBehaviour
     IEnumerator OcultarDespuesDeTiempo()
     {
         yield return new WaitForSeconds(duracionRevelacion);
-        AplicarColor(colorOculto);
+        RestaurarVisualNormal();
+    }
+
+    public void RestaurarVisualNormal()
+    {
+        if (corrutinaOcultar != null)
+        {
+            StopCoroutine(corrutinaOcultar);
+            corrutinaOcultar = null;
+        }
+
         estaRevelado = false;
-        corrutinaOcultar = null;
+
+        if (renderers != null && coloresOriginales != null)
+        {
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null && renderers[i].material != null && i < coloresOriginales.Length)
+                {
+                    renderers[i].material.color = coloresOriginales[i];
+                }
+            }
+        }
     }
 
     private void AplicarColor(Color nuevoColor)
