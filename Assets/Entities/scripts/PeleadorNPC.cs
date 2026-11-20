@@ -27,6 +27,11 @@ public class PeleadorNPC : MonoBehaviour
     public float tiempoCooldownEmpuje = 2f; // Tiempo de cooldown entre empujes
     private float siguienteEmpuje = 0f; // Tiempo en el que el NPC puede empujar nuevamente al jugador
 
+//VFX
+    public GameObject vfxGolpeSueloPrefab; //Prefab
+    public Transform puntoImpacto;
+    public float duracionVFX = 3f;
+
     void Start()
     {
         // Obtener referencias a los componentes necesarios
@@ -130,6 +135,16 @@ public class PeleadorNPC : MonoBehaviour
 
     void EjecutarAtaque()
     {
+        if (vfxGolpeSueloPrefab != null)
+        {
+            Vector3 posicionVfx = puntoImpacto != null ? puntoImpacto.position : transform.position;
+            posicionVfx.y = transform.position.y + 0.05f; // Evita z-fighting con el suelo/NavMesh
+
+            GameObject vfxInstancia = Instantiate(vfxGolpeSueloPrefab, posicionVfx, Quaternion.identity);
+            Destroy(vfxInstancia, duracionVFX);
+        }
+
+
         if (jugador == null) return;
         float distanciaJugador = Vector3.Distance(transform.position, jugador.position);
 
