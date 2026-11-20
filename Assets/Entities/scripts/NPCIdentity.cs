@@ -26,39 +26,60 @@ public class NPCIdentity : MonoBehaviour
 
     // Variables de rastro
     public GameObject rastroVisual;
-    public float duracionRastro = 3f; // Duración del rastro en segundos
-    public float intervaloRastro = 0.5f; // Intervalo entre cada rastro en segundos
+    public float duracionVidaRastro = 3f; // Tiempo que permanece cada instancia del rastro antes de destruirse
+    public float intervaloRastro = 0.5f;  // Tiempo mínimo entre instanciar un rastro y otro
+    public float distanciaMinimaRastro = 1f;
     private Vector3 ultimaPosicionRastro;
+    private float temporizadorRastro = 0f;
 
     // Variables de estado
     private Renderer[] renderers;
     private bool estaRevelado = false;
     private Coroutine corrutinaOcultar;
+    private TramposoNPC tramposoScript;
     public bool EstaRevelado => estaRevelado;
+
+    public float alturaRastro = 0.15f;
 
     void Start()
     {
         renderers = GetComponentsInChildren<Renderer>();
+        tramposoScript = GetComponent<TramposoNPC>();
         ActualizarPuntosSegunRol();
-        ultimaPosicionRastro = transform.position; 
+        ultimaPosicionRastro = transform.position;
     }
+
 
     void Update()
     {
-        //Solo los NPCs culpables dejan rastro visual
-        if (esCulpable() && rastroVisual != null)
+        // Solo los NPCs culpables (y que no sean clon de Tramposo) dejan rastro cuando el perro olfatea
+        bool puedeDejarRastro = esCulpable()
+            && PerroController.estaOlfateando
+            && (tramposoScript == null || !tramposoScript.esClon);
+
+        if (puedeDejarRastro && rastroVisual != null)
         {
-            //si el NPC se mueve lo suficiente, se genera un rastro visual
-            if (Vector3.Distance(transform.position, ultimaPosicionRastro) >= 1f)
+            temporizadorRastro += Time.deltaTime;
+
+            if (temporizadorRastro >= intervaloRastro && Vector3.Distance(transform.position, ultimaPosicionRastro) >= distanciaMinimaRastro)
             {
-                duracionRastro += Time.deltaTime;
-                if (duracionRastro >= intervaloRastro)
+                Vector3 direccionRastro = transform.position - ultimaPosicionRastro;
+                direccionRastro.y = 0f;
+
+                Quaternion rotacionRastro = direccionRastro.sqrMagnitude > 0.0001f
+                    ? Quaternion.LookRotation(direccionRastro.normalized)
+                    : transform.rotation;
+
+                GameObject instanciaRastro = Instantiate(rastroVisual, transform.position + Vector3.up * 0.5f, rotacionRastro);
+
+                if (duracionVidaRastro > 0f)
                 {
-                    Instantiate(rastroVisual, transform.position + Vector3.up * 0.5f, Quaternion.identity);
-                    duracionRastro = 0f;
+                    Destroy(instanciaRastro, duracionVidaRastro);
                 }
+
+                ultimaPosicionRastro = transform.position;
+                temporizadorRastro = 0f;
             }
-            ultimaPosicionRastro = transform.position;
         }
     }
 
@@ -84,7 +105,7 @@ public class NPCIdentity : MonoBehaviour
 
     public void RevelarNPC()
     {
-        if(corrutinaOcultar != null)
+        if (corrutinaOcultar != null)
         {
             StopCoroutine(corrutinaOcultar);
         }
@@ -110,7 +131,10 @@ public class NPCIdentity : MonoBehaviour
         {
             foreach (Renderer rend in renderers)
             {
-                rend.material.color = nuevoColor;
+                if (rend != null && rend.material != null)
+                {
+                    rend.material.color = nuevoColor;
+                }
             }
         }
     }

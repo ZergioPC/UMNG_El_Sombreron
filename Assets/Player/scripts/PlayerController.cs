@@ -51,19 +51,21 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
 
-        forward = Camera.main.transform.forward;
-        forward.y = 0; // Mantener la altura del jugador constante
-        forward = Vector3.Normalize(forward);
+        if (Camera.main != null)
+        {
+            forward = Camera.main.transform.forward;
+            forward.y = 0; // Mantener la altura del jugador constante
+            forward = Vector3.Normalize(forward);
 
-        right = Camera.main.transform.right;
-        right.y = 0; // Mantener la altura del jugador constante
-        right = Vector3.Normalize(right);
+            right = Camera.main.transform.right;
+            right.y = 0; // Mantener la altura del jugador constante
+            right = Vector3.Normalize(right);
+        }
 
-        if(scriptCamara == null)
+        if (scriptCamara == null)
         {
             scriptCamara = FindAnyObjectByType<CamaraController>();
         }
-
     }
 
 // Update is called once per frame
@@ -80,7 +82,7 @@ public class PlayerController : MonoBehaviour
 
     void ProcesarMovimiento() // Metodo para procesar el movimiento del jugador
     {
-        if(haciendoDash) // Si el jugador está haciendo un dash, no permitir el movimiento normal
+        if (haciendoDash) // Si el jugador está haciendo un dash, no permitir el movimiento normal
         {
             return;
         }
@@ -117,7 +119,7 @@ public class PlayerController : MonoBehaviour
         // Logica para actualizar las animaciones del jugador
         if (animator != null)
         {
-            float valorAnimacion = movement.magnitude*(runSpeed ? 2f : 1f); // Ajustar la velocidad de la animación según si el jugador está corriendo o caminando
+            float valorAnimacion = movement.magnitude * (runSpeed ? 2f : 1f); // Ajustar la velocidad de la animación según si el jugador está corriendo o caminando
             if (haciendoDash)
             {
                 valorAnimacion = 2f; // Durante el dash, la animación de correr se reproduce a velocidad completa
@@ -171,18 +173,24 @@ public class PlayerController : MonoBehaviour
     // Metodo para procesar el atrapar objetos del jugador
     void procesarAtrapar()
     {
-        if (Input.GetMouseButtonDown(0)) 
+        if (Input.GetMouseButtonDown(0))
         {
             // Detectar NPCs en el rango de atrapar usando un OverlapSphere
             Collider[] NPCsEncontrados = Physics.OverlapSphere(transform.position + transform.forward * rangoAtrapar, rangoAtrapar, capaNPC);
-            
+
             // Si se encuentra al menos un NPC, atrapar al primero encontrado
             if (NPCsEncontrados.Length > 0)
             {
                 NPCIdentity npc = NPCsEncontrados[0].GetComponentInParent<NPCIdentity>();
-                
+
                 if (npc != null)
                 {
+                    TramposoNPC tramposo = npc.GetComponentInParent<TramposoNPC>();
+                    if (tramposo != null && !tramposo.PuedeSerCapturado)
+                    {
+                        return; // No es capturable mientras lanza la bomba de humo
+                    }
+
                     if (animator != null)
                     {
                         animator.SetTrigger("attack");
@@ -210,7 +218,7 @@ public class PlayerController : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(direccionMirar);
         }
 
-        // Animacion de atrapar)
+        // Animacion de atrapar
         float tiempoAtrapar = 0.2f;
         float tiempoTranscurrido = 0f;
 
@@ -221,16 +229,27 @@ public class PlayerController : MonoBehaviour
             tiempoTranscurrido += Time.deltaTime;
             yield return null;
         }
-        
+
         // Logica para atrapar culpable o inocente
         if (npc != null)
         {
+            TramposoNPC tramposo = npc.GetComponentInParent<TramposoNPC>();
+            if (tramposo != null && tramposo.esClon)
+            {
+                bool dioPuntos;
+                tramposo.IntentarCapturar(out dioPuntos); // Dispara el VFX del clon y devuelve dioPuntos = false
+                Destroy(npc.gameObject);
+                bajoControlJugador = true;
+                yield break;
+            }
+
             if (npc.esCulpable())
             {
-                puntuacionActual += npc.puntosModificador; 
-            }else
+                puntuacionActual += npc.puntosModificador;
+            }
+            else
             {
-                puntuacionActual -= npc.puntosModificador; 
+                puntuacionActual -= npc.puntosModificador;
             }
             /*Easter Egg: serenata a la dama
             else if (npc.tipo == NPCIdentity.TipoNPC.Dama && tieneGuitarra)
@@ -239,14 +258,14 @@ public class PlayerController : MonoBehaviour
             }*/
             Destroy(npc.gameObject); // Destruir el NPC atrapado
         }
-        bajoControlJugador = true;  
+        bajoControlJugador = true;
     }
 
     void procesarInvocacionPerro() // Metodo para procesar la invocación del perro
     {
         if (Input.GetMouseButtonDown(1) && invocacionDisponible)
         {
-            if(perro != null && puntoInvocacion != null)
+            if (perro != null && puntoInvocacion != null)
             {
                 StartCoroutine(InvocarPerro());
             }
@@ -267,7 +286,7 @@ public class PlayerController : MonoBehaviour
         {
             scriptCamara.CambiarTarget(perro.transform);
         }
-        
+
         //tiempo de invocación del perro
         yield return new WaitForSeconds(tiempoInvocacion);
         perro.DesactivarPerro(); // Desactivar el perro después del tiempo de invocación
@@ -308,7 +327,7 @@ public class PlayerController : MonoBehaviour
     }
 
     // Metodo para detectar si el jugador deja de estar en contacto con el suelo
-    private void OnCollisionExit(Collision collision) 
+    private void OnCollisionExit(Collision collision)
     {
         if (collision.gameObject.CompareTag("enSuelo"))
         {
