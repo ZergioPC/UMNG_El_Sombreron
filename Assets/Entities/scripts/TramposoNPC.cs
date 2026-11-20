@@ -12,25 +12,54 @@ public class TramposoNPC : MonoBehaviour
     private Animator animator;
     private Transform jugador;
 
-// Parametros de huida
+    [Header("Parámetros de huida")]
     public float velocidadTranquilo = 2.5f;
     public float velocidadHuida = 7f;
-    public float radioAlerta = 8f;        // Distancia a la que detecta al Sombrerón y empieza a huir
-    public float distanciaEscape = 2.5f;   // Si el Sombrerón se acerca sin Dash a esta distancia, desaparece
+    public float radioAlerta = 8f;         // Distancia a la que detecta al Sombrerón y empieza a huir
+    public float distanciaEscape = 2.5f;   // Si el Sombrerón se acerca sin Dash a esta distancia, activa el truco
 
-//Efecto de desaparicion
-    public GameObject efectoHumoPrefab;   // Opcional: Sistema de partículas de humo al desaparecer
+    [Header("Bomba de humo y duplicación")]
+    public GameObject efectoHumoPrefab;    // Sistema de partículas de humo al lanzar
+    public GameObject clonTramposoPrefab;  // Prefab idéntico del Tramposo para duplicarse
+    public int fotogramaLanzamiento = 60;  // Fotograma en el que inicia el humo y la clonación
+    public float fallbackTiempoHumo = 1f;  // Tiempo de respaldo si no encuentra el clip de ataque
+    public float duracionHuidaDoble = 2f;  // Tiempo que corren separados tras lanzar la bomba
+    public bool esClon = false;            // True en el duplicado, false en el original
+
+    [Header("Captura y VFX de clon")]
+    public GameObject vfxCapturaClonPrefab; // VFX que sale si atrapas al clon en vez del original
+    public float duracionVfxClon = 2.5f;    // Tiempo antes de destruir el VFX del clon
+
+    // Mientras lanza la bomba quieto, no es capturable
+    public bool PuedeSerCapturado => !usandoHumo;
+    public bool OtorgaPuntos => !esClon;
 
     private bool aturdido = false;
     private bool huyendo = false;
+    private bool usandoHumo = false;
+    private bool yaClono = false;
+    private bool humoYaEjecutado = false;
+    private bool tieneParametroMovement = false;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         identidad = GetComponent<NPCIdentity>();
+        animator = GetComponent<Animator>();
 
-        // Forzar el tipo a Tramposo en el script de identidad
         identidad.tipo = NPCIdentity.TipoNPC.Tramposo;
+
+        if (animator != null && animator.runtimeAnimatorController != null)
+        {
+            foreach (AnimatorControllerParameter param in animator.parameters)
+            {
+                if (param.name == "movement" && param.type == AnimatorControllerParameterType.Float)
+                {
+                    tieneParametroMovement = true;
+                    break;
+                }
+            }
+        }
 
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
@@ -38,7 +67,6 @@ public class TramposoNPC : MonoBehaviour
             jugador = playerObj.transform;
         }
 
-        // Posicionar correctamente en NavMesh
         NavMeshHit hit;
         if (NavMesh.SamplePosition(transform.position, out hit, 5.0f, NavMesh.AllAreas))
         {
@@ -46,12 +74,31 @@ public class TramposoNPC : MonoBehaviour
         }
 
         agent.speed = velocidadTranquilo;
-        MoverNuevoPunto();
+
+        // Si nace ya como clon, empieza moviéndose para no quedarse clavado
+        if (esClon)
+        {
+            yaClono = true;
+            MoverNuevoPunto();
+        }
+        else
+        {
+            MoverNuevoPunto();
+        }
     }
 
     void Update()
     {
-        if (jugador == null || !agent.isOnNavMesh || aturdido) return;
+        if (jugador == null || !agent.isOnNavMesh) return;
+
+        if (animator != null && tieneParametroMovement)
+        {
+            float velAnim = aturdido || usandoHumo ? 0f : agent.velocity.magnitude;
+            animator.SetFloat("movement", velAnim);
+        }
+
+        // Mientras lanza la bomba está quieto y no es capturable; si está aturdido, tampoco actúa
+        if (aturdido || usandoHumo) return;
 
         float distanciaAlJugador = Vector3.Distance(transform.position, jugador.position);
         PlayerController playerScript = jugador.GetComponent<PlayerController>();
@@ -64,21 +111,20 @@ public class TramposoNPC : MonoBehaviour
             return;
         }
 
-        // 2. SI EL JUGADOR SE ACERCA DEMASIADO SIN DASH: Desaparece/Escapa
-        if (distanciaAlJugador <= distanciaEscape)
+        // 2. SI EL JUGADOR SE ACERCA DEMASIADO SIN DASH: Se queda quieto, lanza humo y se duplica en frame 60
+        if (distanciaAlJugador <= distanciaEscape && !esClon && !yaClono)
         {
-            EscaparYDesaparecer();
+            StartCoroutine(LanzarHumoYDuplicar());
             return;
         }
 
-        // 3. SI DETECTA AL JUGADOR EN RADIO DE ALERTA: Empieza a correr para perderse
+        // 3. SI DETECTA AL JUGADOR EN RADIO DE ALERTA: Corre para huir (tanto el original como el clon)
         if (distanciaAlJugador <= radioAlerta)
         {
             HuirDelJugador();
         }
         else
         {
-            // Movimiento normal cuando no ve peligro
             if (huyendo)
             {
                 huyendo = false;
@@ -97,7 +143,6 @@ public class TramposoNPC : MonoBehaviour
         huyendo = true;
         agent.speed = velocidadHuida;
 
-        // Calcula una dirección opuesta al Sombrerón
         Vector3 direccionOpuesta = (transform.position - jugador.position).normalized;
         Vector3 puntoHuida = transform.position + direccionOpuesta * 6f;
 
@@ -108,25 +153,181 @@ public class TramposoNPC : MonoBehaviour
         }
     }
 
-    void EscaparYDesaparecer()
+    IEnumerator LanzarHumoYDuplicar()
     {
-        Debug.Log("¡El Tramposo vio al Sombrerón muy cerca y logró desaparecer entre los callejones!");
+        usandoHumo = true;
+        yaClono = true;
+        humoYaEjecutado = false;
+
+        // Se queda completamente quieto mientras lanza la bomba (y no es capturable)
+        agent.isStopped = true;
+        agent.velocity = Vector3.zero;
+
+        Vector3 dirJugador = jugador.position - transform.position;
+        dirJugador.y = 0f;
+        if (dirJugador != Vector3.zero)
+        {
+            transform.rotation = Quaternion.LookRotation(dirJugador);
+        }
+
+        if (animator != null)
+        {
+            if (tieneParametroMovement)
+            {
+                animator.SetFloat("movement", 0f);
+            }
+            animator.SetTrigger("attack");
+        }
+
+        float tiempoEspera = CalcularTiempoHastaFotograma(fotogramaLanzamiento);
+        float transcurrido = 0f;
+
+        while (transcurrido < tiempoEspera && !humoYaEjecutado)
+        {
+            transcurrido += Time.deltaTime;
+            yield return null;
+        }
+
+        if (!humoYaEjecutado)
+        {
+            EjecutarEfectoHumoYClonacion();
+        }
+
+        yield return new WaitForSeconds(duracionHuidaDoble);
+        usandoHumo = false;
+    }
+
+    float CalcularTiempoHastaFotograma(int frameObjetivo)
+    {
+        if (animator != null && animator.runtimeAnimatorController != null)
+        {
+            foreach (AnimationClip clip in animator.runtimeAnimatorController.animationClips)
+            {
+                if (clip != null && clip.name.ToLower().Contains("attack"))
+                {
+                    float fps = clip.frameRate > 0f ? clip.frameRate : 60f;
+                    return Mathf.Max(0f, frameObjetivo / fps);
+                }
+            }
+        }
+
+        return fallbackTiempoHumo;
+    }
+
+    // Puede llamarse desde un Animation Event en el frame 60 del clip
+    public void EventoLanzarHumoYClonacion()
+    {
+        if (!usandoHumo || humoYaEjecutado) return;
+        EjecutarEfectoHumoYClonacion();
+    }
+
+    void EjecutarEfectoHumoYClonacion()
+    {
+        humoYaEjecutado = true;
 
         if (efectoHumoPrefab != null)
         {
             Instantiate(efectoHumoPrefab, transform.position, Quaternion.identity);
         }
 
-        Destroy(gameObject); // Desaparece sin dar puntos
+        Vector3 dirLejosJugador = jugador != null ? (transform.position - jugador.position).normalized : transform.forward;
+        dirLejosJugador.y = 0f;
+        if (dirLejosJugador == Vector3.zero) dirLejosJugador = transform.forward;
+
+        // Direcciones separadas para que original y clon salgan moviéndose en rumbos distintos
+        Vector3 dirOriginal = (dirLejosJugador - transform.right * 0.85f).normalized;
+        Vector3 dirClon = (dirLejosJugador + transform.right * 0.85f).normalized;
+
+        GameObject clonObj = null;
+        if (clonTramposoPrefab != null)
+        {
+            clonObj = Instantiate(clonTramposoPrefab, transform.position, transform.rotation);
+            TramposoNPC clonScript = clonObj.GetComponent<TramposoNPC>();
+            if (clonScript != null)
+            {
+                clonScript.esClon = true;
+                clonScript.yaClono = true;
+                clonScript.usandoHumo = false; // El clon ya sale moviéndose, no bloqueado lanzando bomba
+                clonScript.huyendo = true;
+            }
+        }
+
+        // Mover al original
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = false;
+            huyendo = true;
+            agent.speed = velocidadHuida;
+            EnviarEnDireccion(agent, dirOriginal, 8f);
+        }
+
+        // Mover al clon
+        if (clonObj != null)
+        {
+            NavMeshAgent clonAgent = clonObj.GetComponent<NavMeshAgent>();
+            if (clonAgent != null)
+            {
+                NavMeshHit hitClon;
+                if (NavMesh.SamplePosition(transform.position, out hitClon, 3f, NavMesh.AllAreas))
+                {
+                    clonAgent.Warp(hitClon.position);
+                }
+                clonAgent.isStopped = false;
+                clonAgent.speed = velocidadHuida;
+                EnviarEnDireccion(clonAgent, dirClon, 8f);
+            }
+        }
+    }
+
+    void EnviarEnDireccion(NavMeshAgent targetAgent, Vector3 direccion, float distancia)
+    {
+        if (targetAgent == null || !targetAgent.isOnNavMesh) return;
+
+        Vector3 destino = transform.position + direccion.normalized * distancia;
+        NavMeshHit hit;
+        if (NavMesh.SamplePosition(destino, out hit, distancia, NavMesh.AllAreas))
+        {
+            targetAgent.SetDestination(hit.position);
+        }
+    }
+
+    /// <summary>
+    /// Llama este método cuando el jugador intente capturar al Tramposo.
+    /// Devuelve true si la captura fue válida (no estaba lanzando bomba).
+    /// </summary>
+    public bool IntentarCapturar(out bool dioPuntos)
+    {
+        dioPuntos = false;
+
+        if (!PuedeSerCapturado)
+        {
+            return false;
+        }
+
+        if (esClon)
+        {
+            if (vfxCapturaClonPrefab != null)
+            {
+                GameObject vfx = Instantiate(vfxCapturaClonPrefab, transform.position, Quaternion.identity);
+                Destroy(vfx, duracionVfxClon);
+            }
+            dioPuntos = false;
+        }
+        else
+        {
+            dioPuntos = true;
+        }
+
+        Destroy(gameObject);
+        return true;
     }
 
     IEnumerator Aturdir()
     {
         aturdido = true;
         agent.isStopped = true;
-        Debug.Log("¡Sorprendiste al Tramposo con un Dash! Quedó acorralado e inmóvil.");
 
-        yield return new WaitForSeconds(2.5f); // 2.5 segundos de ventana para atraparlo con clic izquierdo
+        yield return new WaitForSeconds(2.5f);
 
         if (this != null)
         {

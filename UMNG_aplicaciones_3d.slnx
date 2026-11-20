@@ -1,7 +1,13 @@
 ﻿<Solution>
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="CFXRRuntime.csproj" />
+  <Project Path="CFXRDemo.csproj" />
+  <Project Path="CFXREditor.csproj" />
   <Project Path="Gentleland.SteampunkUI.DemoAndExample.csproj" />
+  <Project Path="KinoBloom.Runtime.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="CFXR.WelcomeScreen.csproj" />
+  <Project Path="ToonyColorsPro.Demo.Editor.csproj" />
   <Project Path="Gentleland.Utils.SteampunkUI.csproj" />
   <Project Path="OccaSoftware.Crosshairs.Editor.csproj" />
 </Solution>

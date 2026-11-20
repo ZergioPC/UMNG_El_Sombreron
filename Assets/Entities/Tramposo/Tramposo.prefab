@@ -478,9 +478,11 @@ MonoBehaviour:
   colorObjetivo: {r: 1, g: 0.2663138, b: 0, a: 1}
   colorInocente: {r: 0.1320967, g: 0.3342422, b: 0.5084495, a: 1}
   duracionRevelacion: 5
-  rastroVisual: {fileID: 0}
-  duracionRastro: 3
+  rastroVisual: {fileID: 3085937280970000856, guid: abedfbe921072164dac42be26d157d68, type: 3}
+  duracionVidaRastro: 3
   intervaloRastro: 0.5
+  distanciaMinimaRastro: 1
+  alturaRastro: 0.15
 --- !u!195 &-4297986022898095197
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -516,10 +518,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TramposoNPC
   velocidadTranquilo: 2.5
-  velocidadHuida: 7
-  radioAlerta: 8
+  velocidadHuida: 5
+  radioAlerta: 6
   distanciaEscape: 2.5
-  efectoHumoPrefab: {fileID: 0}
+  efectoHumoPrefab: {fileID: 2433282508537954060, guid: 3ef3ae421f71c5c4e97fe12dc2fc6312, type: 3}
+  clonTramposoPrefab: {fileID: 1662621051514493638}
+  fotogramaLanzamiento: 60
+  fallbackTiempoHumo: 1
+  duracionHuidaDoble: 5
+  esClon: 0
+  vfxCapturaClonPrefab: {fileID: 7226888052703040409, guid: 7ec363c8df426644ea85f8d6d570561c, type: 3}
+  duracionVfxClon: 2.5
 --- !u!95 &6859132092410132211
 Animator:
   serializedVersion: 7
