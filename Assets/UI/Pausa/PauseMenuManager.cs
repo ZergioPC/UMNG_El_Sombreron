@@ -4,6 +4,13 @@ using UnityEngine.SceneManagement; // Necesario para la función de reiniciar la
 
 public class PauseMenuManager : MonoBehaviour
 {
+    [Header("Controles del nivel (se desactivan durante la pausa)")]
+    [SerializeField] private Behaviour[] gameplayControls = new Behaviour[0];
+    private bool[] controlStates;
+    private bool cursorWasVisible;
+    private CursorLockMode cursorLockBeforePause;
+    private float timeScaleBeforePause = 1f;
+    private bool audioWasPaused;
     [Header("Paneles UI")]
     [SerializeField] private GameObject pauseCanvas;
     [SerializeField] private GameObject panelMenuPausa;
@@ -39,7 +46,7 @@ public class PauseMenuManager : MonoBehaviour
     private void Update()
     {
         // Tecla P de forma temporal para abrir y cerrar el menú de pausa
-        if (Input.GetKeyDown(KeyCode.P))
+        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P))
         {
             if (isPaused)
                 ResumeGame();
@@ -57,17 +64,40 @@ public class PauseMenuManager : MonoBehaviour
     // --- Control del Estado de Pausa ---
     public void PauseGame()
     {
+        if (isPaused) return;
+        timeScaleBeforePause = Time.timeScale;
+        audioWasPaused = AudioListener.pause;
+        cursorWasVisible = Cursor.visible;
+        cursorLockBeforePause = Cursor.lockState;
+        controlStates = new bool[gameplayControls.Length];
+        for (int i = 0; i < gameplayControls.Length; i++)
+        {
+            if (gameplayControls[i] == null) continue;
+            controlStates[i] = gameplayControls[i].enabled;
+            gameplayControls[i].enabled = false;
+        }
         isPaused = true;
         if (pauseCanvas != null) pauseCanvas.SetActive(true);
         ShowPanelPausa();
         Time.timeScale = 0f; // Congela el juego
+        AudioListener.pause = true;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void ResumeGame()
     {
+        if (isPaused)
+        {
+            for (int i = 0; i < gameplayControls.Length; i++)
+                if (gameplayControls[i] != null) gameplayControls[i].enabled = controlStates[i];
+            Time.timeScale = timeScaleBeforePause;
+            AudioListener.pause = audioWasPaused;
+            Cursor.visible = cursorWasVisible;
+            Cursor.lockState = cursorLockBeforePause;
+        }
         isPaused = false;
         if (pauseCanvas != null) pauseCanvas.SetActive(false);
-        Time.timeScale = 1f; // Descongelar el juego
     }
 
     // --- Navegación entre Paneles ---
@@ -95,14 +125,32 @@ public class PauseMenuManager : MonoBehaviour
     // --- Botón de Reiniciar (Recarga la escena activa) ---
     public void RestartGame()
     {
+        ResumeGame();
         Time.timeScale = 1f; // Importante: restaurar la velocidad del tiempo antes de reiniciar
+        AudioListener.pause = false;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     // --- Funcionalidades Provisionales (Logs en Consola) ---
     public void GoToMainMenu()
     {
-        Debug.Log("[UI Pausa] Volviendo al Menú Principal...");
+        ResumeGame();
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+        SceneManager.LoadScene("Scene_Inicio");
+    }
+
+    private void OnDestroy()
+    {
+        if (sliderMusica != null) sliderMusica.onValueChanged.RemoveListener(OnMusicVolumeChanged);
+        if (sliderSFX != null) sliderSFX.onValueChanged.RemoveListener(OnSFXVolumeChanged);
+        if (isPaused)
+        {
+            Time.timeScale = timeScaleBeforePause;
+            AudioListener.pause = audioWasPaused;
+        }
     }
 
     private void OnMusicVolumeChanged(float value)
