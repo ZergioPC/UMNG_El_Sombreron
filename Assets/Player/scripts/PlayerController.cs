@@ -20,7 +20,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 forward, right; // Vectores de dirección para el movimiento del jugador
 
 // Referencias a otros scripts
-    public CamaraController scriptCamara; // Referencia directa al script de la cámara
+    private CamaraController scriptCamara; // Referencia directa al script de la cámara
 
 // Variables para controlar el movimiento del jugador
     public float speed = 5f; // Velocidad de movimiento del jugador
@@ -33,6 +33,7 @@ public class PlayerController : MonoBehaviour
     public float dashCooldown = 1f; // Tiempo de recarga del dash
     public bool haciendoDash = false; // Variable para controlar si el jugador está haciendo un dash
     private bool dashDisponible = true; // Variable para controlar si el dash está disponible
+    public ParticleSystem vfxDash; // VFX activado durante el dash
 
 // Variables para controlar el atrapar objetos del jugador
     public float rangoAtrapar = 2f; // Rango de atrapar objetos
@@ -48,6 +49,8 @@ public class PlayerController : MonoBehaviour
     public float tiempoCooldownInvocacion = 10f; // Tiempo de recarga de la invocación del perro
     private bool invocacionDisponible = true; // Variable para controlar si la invocación del perro está disponible
     private bool bajoControlJugador = true; // Variable para controlar si el jugador tiene control del personaje
+    private bool perroInvocado = false; // True mientras el perro está activo
+    private Coroutine rutinaInvocacionPerro;
 
 // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -75,6 +78,21 @@ public class PlayerController : MonoBehaviour
 // Update is called once per frame
     private void Update()
     {
+        // Mientras el perro está invocado: clic izquierdo = olfatear, clic derecho = desaparecer y volver
+        if (perroInvocado)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                ActivarOlfateoPerro();
+            }
+
+            if (Input.GetMouseButtonDown(1))
+            {
+                RetirarPerroYVolver();
+            }
+            return;
+        }
+
         if (!bajoControlJugador) return;
 
         ProcesarMovimiento();
@@ -82,6 +100,14 @@ public class PlayerController : MonoBehaviour
         ProcesarDash();
         procesarAtrapar();
         procesarInvocacionPerro();
+    }
+
+    private void ReproducirVFX(ParticleSystem ps)
+    {
+        if (ps == null) return;
+        if (!ps.gameObject.activeSelf) ps.gameObject.SetActive(true);
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        ps.Play(true);
     }
 
     void ProcesarMovimiento() // Metodo para procesar el movimiento del jugador
@@ -159,6 +185,13 @@ public class PlayerController : MonoBehaviour
         haciendoDash = true;
         dashDisponible = false;
 
+        if (vfxDash != null)
+        {
+            if (!vfxDash.gameObject.activeSelf) vfxDash.gameObject.SetActive(true);
+            vfxDash.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            vfxDash.Play(true);
+        }
+
         Vector3 direccionDash = transform.forward; // Dirección del dash basada en la orientación del jugador
         float dashStartTime = Time.time;
 
@@ -166,6 +199,11 @@ public class PlayerController : MonoBehaviour
         {
             rb.linearVelocity = new Vector3(direccionDash.x * dashForce, rb.linearVelocity.y, direccionDash.z * dashForce);
             yield return null;
+        }
+
+        if (vfxDash != null)
+        {
+            vfxDash.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
 
         haciendoDash = false;
@@ -322,11 +360,11 @@ public class PlayerController : MonoBehaviour
 
     void procesarInvocacionPerro() // Metodo para procesar la invocación del perro
     {
-        if (Input.GetMouseButtonDown(1) && invocacionDisponible)
+        if (Input.GetMouseButtonDown(1) && invocacionDisponible && !perroInvocado)
         {
             if (perro != null && puntoInvocacion != null)
             {
-                StartCoroutine(InvocarPerro());
+                rutinaInvocacionPerro = StartCoroutine(InvocarPerro());
             }
         }
     }
@@ -334,12 +372,13 @@ public class PlayerController : MonoBehaviour
     IEnumerator InvocarPerro() // Coroutine para invocar al perro
     {
         invocacionDisponible = false;
+        perroInvocado = true;
         bajoControlJugador = false; // Desactivar el control del jugador mientras el perro está invocado
 
         rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0); // Detener el movimiento del jugador mientras el perro está invocado
 
         perro.ActivarPerro(puntoInvocacion.position);
-
+        
         // Cambiar la cámara para seguir al perro invocado
         if (scriptCamara != null)
         {
@@ -348,15 +387,47 @@ public class PlayerController : MonoBehaviour
 
         //tiempo de invocación del perro
         yield return new WaitForSeconds(tiempoInvocacion);
-        perro.DesactivarPerro(); // Desactivar el perro después del tiempo de invocación
+        RetirarPerroYVolver();
+    }
+
+    private void ActivarOlfateoPerro()
+    {
+        if (perro != null)
+        {
+            perro.Olfatear();
+        }
+    }
+
+    private void RetirarPerroYVolver()
+    {
+        if (!perroInvocado) return;
+
+        perroInvocado = false;
+
+        if (rutinaInvocacionPerro != null)
+        {
+            StopCoroutine(rutinaInvocacionPerro);
+            rutinaInvocacionPerro = null;
+        }
+
+        if (perro != null)
+        {
+            perro.DesactivarPerro(); // Desactivar el perro al volver al jugador o terminar el tiempo
+        }
 
         // Cambiar la cámara de vuelta al jugador
         if (scriptCamara != null)
         {
             scriptCamara.CambiarTarget(transform); // Cambiar la cámara de vuelta al jugador
         }
+
         bajoControlJugador = true; // Reactivar el control del jugador después de que el perro desaparezca
 
+        StartCoroutine(CooldownInvocacion());
+    }
+
+    private IEnumerator CooldownInvocacion()
+    {
         yield return new WaitForSeconds(tiempoCooldownInvocacion);
         invocacionDisponible = true;
     }

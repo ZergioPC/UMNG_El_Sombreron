@@ -1,2 +1,12 @@
 fileFormatVersion: 2
 guid: c929a7cece0125d45b489c6262788232
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - rastroVisual: {fileID: 3085937280970000856, guid: abedfbe921072164dac42be26d157d68, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
