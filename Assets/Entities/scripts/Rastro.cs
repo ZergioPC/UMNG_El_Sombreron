@@ -6,7 +6,7 @@ public class Rastro : MonoBehaviour
 {
 //Hilo de seda
     public float grosorHilo = 0.025f; // muy delgado
-    public float velocidadEstela = 2.2f; // avance hacia adelante
+    public float velocidadEstela = 1f; // avance hacia adelante
     public float tiempoVidaParticula = 3.5f; // largo del hilo = velocidad * vida
     public int tasaEmisionBase = 4; // pocas hebras, delicadas
 
@@ -29,7 +29,7 @@ public class Rastro : MonoBehaviour
 //Intensidad según cercanía del perro
     public float distanciaMaximaEfecto = 30f;
     public float distanciaMinimaEfecto = 2f;
-    public float multiplicadorCercaniaMax = 1.8f;
+    public float multiplicadorCercaniaMax = 20;
 
     private ParticleSystem ps;
     private ParticleSystemRenderer psRenderer;

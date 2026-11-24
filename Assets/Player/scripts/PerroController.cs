@@ -11,6 +11,12 @@ public class PerroController : MonoBehaviour
     private Rigidbody rb;
     public Transform jugador;
 
+    // VFX del perro
+    public ParticleSystem vfxOlfateo;
+    public ParticleSystem vfxAparicion;
+    public float duracionVFXAparicion = 0.5f;
+    private Coroutine rutinaVFXAparicion;
+
     // Variables de seguimiento del jugador
     private bool estaActivo = false;
     public Vector3 offsetSeguimiento = new Vector3(-1.5f, 0, -1.5f);
@@ -105,6 +111,18 @@ public class PerroController : MonoBehaviour
     public void ActivarPerro(Vector3 puntoInvocacion)
     {
         transform.position = puntoInvocacion;
+        if (vfxAparicion != null)
+        {
+            vfxAparicion.transform.position = puntoInvocacion;
+            if (!vfxAparicion.gameObject.activeSelf) vfxAparicion.gameObject.SetActive(true);
+            vfxAparicion.Clear(true);
+            vfxAparicion.Play(true);
+
+            if (rutinaVFXAparicion != null) StopCoroutine(rutinaVFXAparicion);
+            rutinaVFXAparicion = StartCoroutine(DetenerVFXAparicion());
+        }
+
+
         estaActivo = true;
 
         Renderer[] renderers = GetComponentsInChildren<Renderer>();
@@ -116,11 +134,26 @@ public class PerroController : MonoBehaviour
         ActualizarCamara();
     }
 
+    IEnumerator DetenerVFXAparicion()
+    {
+        yield return new WaitForSeconds(duracionVFXAparicion);
+        if (vfxAparicion != null)
+        {
+            vfxAparicion.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+        rutinaVFXAparicion = null;
+    }
+
     public void DesactivarPerro()
     {
         estaActivo = false;
         estaOlfateando = false;
         inputMovimiento = Vector3.zero;
+
+        if (vfxOlfateo != null)
+        {
+            vfxOlfateo.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
 
         if (rutinaOlfateo != null)
         {
@@ -156,30 +189,19 @@ public class PerroController : MonoBehaviour
         }
     }
 
-    void BuscarNPCs()
+    // Activado con clic izquierdo desde PlayerController mientras el perro está invocado
+    public void Olfatear()
     {
-        Collider[] npcsEncontrados = Physics.OverlapSphere(transform.position, rangoDeteccion, capaNPC);
+        if (!estaActivo) return;
 
-        bool encontroAlguno = false;
-        bool encontroCulpable = false;
-
-        foreach (Collider npcCollider in npcsEncontrados)
+        if (vfxOlfateo != null)
         {
-            NPCIdentity npc = npcCollider.GetComponentInParent<NPCIdentity>();
-            if (npc != null)
-            {
-                npc.RevelarNPC();
-                encontroAlguno = true;
-
-                if (npc.esCulpable())
-                {
-                    encontroCulpable = true;
-                }
-            }
+            if (!vfxOlfateo.gameObject.activeSelf) vfxOlfateo.gameObject.SetActive(true);
+            vfxOlfateo.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            vfxOlfateo.Play(true);
         }
 
-        // Solo activa el rastro cuando el perro ejecuta la acción de olfatear y hay un culpable cerca
-        if (encontroAlguno && Time.time >= proximoOlfateo)
+        if (Time.time >= proximoOlfateo)
         {
             proximoOlfateo = Time.time + cooldownOlfateo;
 
@@ -188,13 +210,24 @@ public class PerroController : MonoBehaviour
                 animator.SetTrigger("smell");
             }
 
-            if (encontroCulpable)
+            if (rutinaOlfateo != null)
             {
-                if (rutinaOlfateo != null)
-                {
-                    StopCoroutine(rutinaOlfateo);
-                }
-                rutinaOlfateo = StartCoroutine(ActivarOlfateoRastro(duracionOlfateoRastro));
+                StopCoroutine(rutinaOlfateo);
+            }
+            rutinaOlfateo = StartCoroutine(ActivarOlfateoRastro(duracionOlfateoRastro));
+        }
+    }
+
+    void BuscarNPCs()
+    {
+        Collider[] npcsEncontrados = Physics.OverlapSphere(transform.position, rangoDeteccion, capaNPC);
+
+        foreach (Collider npcCollider in npcsEncontrados)
+        {
+            NPCIdentity npc = npcCollider.GetComponentInParent<NPCIdentity>();
+            if (npc != null)
+            {
+                npc.RevelarNPC();
             }
         }
     }
@@ -205,11 +238,5 @@ public class PerroController : MonoBehaviour
         yield return new WaitForSeconds(duracion);
         estaOlfateando = false;
         rutinaOlfateo = null;
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, rangoDeteccion);
     }
 }

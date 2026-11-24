@@ -1,2 +1,13 @@
 fileFormatVersion: 2
 guid: ada13f74e5dd2c54ea239cb2b010a32c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - vfxGolpeSueloPrefab: {fileID: 3432958286849152088, guid: 87ee7299dd44ed747af24dbb91bcd33b, type: 3}
+  - puntoImpacto: {fileID: 5354269957714754423, guid: 07e1c40f82234c64799bfcf92f35ab55, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

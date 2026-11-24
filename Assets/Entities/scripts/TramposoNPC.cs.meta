@@ -1,2 +1,14 @@
 fileFormatVersion: 2
 guid: 3b6dc72fe849e8547876e274725adaa9
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - efectoHumoPrefab: {fileID: 2433282508537954060, guid: 3ef3ae421f71c5c4e97fe12dc2fc6312, type: 3}
+  - clonTramposoPrefab: {fileID: 1662621051514493638, guid: 4fb17017fde384d1c91becb943652779, type: 3}
+  - vfxCapturaClonPrefab: {fileID: 7226888052703040409, guid: 7ec363c8df426644ea85f8d6d570561c, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
