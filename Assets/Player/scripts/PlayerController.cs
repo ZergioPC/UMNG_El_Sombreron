@@ -255,10 +255,8 @@ public class PlayerController : MonoBehaviour
         Vector3 posicionFinal = npc != null ? npc.transform.position : transform.position;
         Vector3 direccionMirar = (posicionFinal - posicionInicial).normalized;
         direccionMirar.y = 0; // Mantener la rotación en el plano horizontal
-        if (direccionMirar != Vector3.zero)
-        {
-            transform.rotation = Quaternion.LookRotation(direccionMirar);
-        }
+
+        if (direccionMirar != Vector3.zero) transform.rotation = Quaternion.LookRotation(direccionMirar);
 
         // Animacion de atrapar
         float tiempoAtrapar = 0.2f;
@@ -288,19 +286,16 @@ public class PlayerController : MonoBehaviour
                 yield break;
             }
 
-            if (npc.esCulpable())
-            {
-                puntuacionActual += npc.puntosModificador;
-            }
-            else
-            {
-                puntuacionActual -= npc.puntosModificador;
-            }
-            /*Easter Egg: serenata a la dama
-            else if (npc.tipo == NPCIdentity.TipoNPC.Dama && tieneGuitarra)
-            {
-            puntuacionActual += bonificacionSerenata;
-            }*/
+            bool culpable = npc.esCulpable();
+            if (culpable) puntuacionActual += npc.puntosModificador;
+            else puntuacionActual -= npc.puntosModificador;
+
+            // Letrero flotante: siempre
+            //if (Letrero.Instancia != null) Letrero.Instancia.Mostrar(posNPC, culpable, puntos);
+
+            // Banner: solo cuando atrapas a un culpable (antes de destruir al NPC, porque lee sus scripts)
+            if (culpable && BannerCapturados.Instancia != null) BannerCapturados.Instancia.Mostrar(npc.gameObject);
+
             Destroy(npc.gameObject); // Destruir el NPC atrapado en el fotograma objetivo
         }
         bajoControlJugador = true;
@@ -378,7 +373,7 @@ public class PlayerController : MonoBehaviour
         rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0); // Detener el movimiento del jugador mientras el perro está invocado
 
         perro.ActivarPerro(puntoInvocacion.position);
-        
+
         // Cambiar la cámara para seguir al perro invocado
         if (scriptCamara != null)
         {
