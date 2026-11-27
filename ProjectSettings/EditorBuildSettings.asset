@@ -6,19 +6,22 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/UI/MenuPrincipal/Scene_Inicio.unity
+    path: Assets/Scenes/Inicio.unity
     guid: b8de31b36ab88754c9910afd8dc016f5
-  - enabled: 1
-    path: Assets/UI/MenuPrincipal/Scene_Instrucciones.unity
-    guid: 610e89fb707d64a4981c4c76489e0401
-  - enabled: 1
-    path: Assets/UI/MenuPrincipal/Scene_Opciones.unity
-    guid: 43998ad2fe99c65448a72371b13b1ca8
-  - enabled: 1
-    path: Assets/UI/MenuPrincipal/Scene_Crediitos.unity
-    guid: af519fc55f049464281c741a2b1ffdbb
   - enabled: 1
     path: Assets/Scenes/Gameplay.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/Configuracion.unity
+    guid: b9ce19eb931035e438f9d6e85531cdac
+  - enabled: 1
+    path: Assets/Scenes/Intrucciones.unity
+    guid: d312e6f1b3ef9d34392ccd9b550fc232
+  - enabled: 1
+    path: Assets/Scenes/Creditos.unity
+    guid: af519fc55f049464281c741a2b1ffdbb
+  - enabled: 1
+    path: Assets/Scenes/FinPartida.unity
+    guid: 5d7c53e79c0242b4a9b580508a67afc1
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: a745028196d0045c9bd09377e2f868c5, type: 3}

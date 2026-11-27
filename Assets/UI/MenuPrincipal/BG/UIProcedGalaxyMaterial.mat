@@ -63,23 +63,23 @@ Material:
     m_Floats:
     - _ArmCount: 3
     - _ArmWidth: 0.219
-    - _Brightness: 1.5
+    - _Brightness: 0.81
     - _BumpScale: 1
-    - _CoreSize: 0.182
+    - _CoreSize: 0.147
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _Falloff: 1.65
-    - _GalaxySize: 0.73
+    - _Falloff: 1.5
+    - _GalaxySize: 1.3
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Metallic: 0
     - _Mode: 0
-    - _NoiseAmount: 0.55
+    - _NoiseAmount: 0.5
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _Rotation: -1
+    - _Rotation: -0.4
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _Speed: 0.16
@@ -87,8 +87,8 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _CoreColor: {r: 1, g: 0.75, b: 0.35, a: 1}
+    - _Color: {r: 0.7535489, g: 0.8602773, b: 0.89433956, a: 1}
+    - _CoreColor: {r: 0.40447125, g: 0.4567926, b: 0.6502051, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

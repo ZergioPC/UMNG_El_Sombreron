@@ -1,51 +1,67 @@
 using System.Collections;
-using TMPro;
 using UnityEngine;
+
+public enum TipoLetrero { Culpable, Inocente, Clon }
 
 public class Letrero : MonoBehaviour
 {
     public static Letrero Instancia { get; private set; }
 
-    [Header("Diseño")]
-    public TMP_Text prefabLetrero;       // Si lo asignas, el aspecto se edita en el prefab
-    public TMP_FontAsset fuente;         // Solo se usa si no hay prefab
+    [System.Serializable]
+    public class ConfigLetrero
+    {
+        public string texto = "¡Culpable!";
+        public Color color = Color.white;
+        public Sprite icono;
+        public AudioClip sonido; // Audio de diálogo que suena al salir este cartel
+    }
 
-    [Header("Textos")]
-    public string textoCulpable = "¡Objetivo atrapado! Vamos por el siguiente";
-    public string textoInocente = "¡Era inocente!";
-    public string textoClon = "Nos engaño, era solo un clon!";
+    // Diseño (se edita en el prefab)
+    public LetreroItem prefabLetrero;
+
+    // Textos, colores, iconos y sonidos
+    public ConfigLetrero culpable = new ConfigLetrero
+    { texto = "Otro objetivo atrapado", color = new Color(1f, 0.85f, 0.3f) };
+
+    public ConfigLetrero inocente = new ConfigLetrero
+    { texto = "¡Nos equivocamos! Era inocente", color = new Color(1f, 0.45f, 0.4f) };
+
+    public ConfigLetrero clon = new ConfigLetrero
+    { texto = "Nos engaño... era un clon", color = new Color(0.75f, 0.85f, 1f) };
+
     public bool mostrarPuntos = true;
 
-    [Header("Posición")]
-    public bool enParteInferior = true;          // true = abajo del Canvas, false = sobre el NPC
-    public float margenInferior = 120f;          // Píxeles desde el borde inferior
-    public float alturaLetrero = 2.2f;           // Solo si enParteInferior = false (metros sobre el NPC)
-    public bool reemplazarAnterior = true;       // Un solo letrero a la vez en la parte inferior
+    // AudioSource de los diálogos (Output = Voces, Play On Awake desmarcado)
+    public AudioSource fuenteVoz;
 
-    [Header("Animación")]
-    public float tamanoTexto = 64f;              // Solo si no hay prefab
-    public float duracionLetrero = 1.8f;
-    public float distanciaSubida = 60f;          // Píxeles que sube mientras se desvanece
+    // Burbuja sobre el jugador
+    public Transform objetivo; // Si está vacío, busca al PlayerController
+    public Vector3 offsetMundo = new Vector3(0f, 2.4f, 0f); // Punta de la colita sobre la cabeza
+    public Vector2 offsetPantalla = Vector2.zero; // Ajuste fino en píxeles
+    public bool reemplazarAnterior = true;
+    public float margenBordes = 20f; // Para que no se salga de la pantalla
 
-    [Header("Colores")]
-    public Color colorCulpable = new Color(1f, 0.85f, 0.3f);
-    public Color colorInocente = new Color(1f, 0.35f, 0.3f);
-    public Color colorClon = new Color(0.7f, 0.8f, 0.9f);
+    // Animación
+    public float duracion = 1.8f;
+    public float distanciaSubida = 25f;
 
     private Canvas canvas;
     private RectTransform canvasRect;
-    private GameObject letreroActual;
+    private LetreroItem actual;
 
     private void Awake()
     {
         if (Instancia != null && Instancia != this) { Destroy(gameObject); return; }
         Instancia = this;
 
+        // Si no asignas el AudioSource, usa el que esté en este mismo objeto
+        if (fuenteVoz == null) fuenteVoz = GetComponent<AudioSource>();
+
         canvas = GetComponentInParent<Canvas>();
         if (canvas == null) canvas = FindAnyObjectByType<Canvas>();
-        if (canvas == null)
+        if (canvas == null || prefabLetrero == null)
         {
-            Debug.LogError("LetreroCaptura: no hay ningún Canvas en la escena.");
+            Debug.LogError("LetreroCaptura: falta el Canvas o el Prefab Letrero (Tools > Crear Prefab Letrero).");
             enabled = false;
             return;
         }
@@ -53,128 +69,140 @@ public class Letrero : MonoBehaviour
         canvasRect = canvas.GetComponent<RectTransform>();
     }
 
+    private void Start()
+    {
+        if (objetivo == null)
+        {
+            PlayerController jugador = FindAnyObjectByType<PlayerController>();
+            if (jugador != null) objetivo = jugador.transform;
+        }
+    }
+
     // ---------- API pública ----------
-    public void Mostrar(Vector3 posicion, bool culpable, int puntos, bool esClon = false)
+    public void Mostrar(TipoLetrero tipo, int puntos = 0)
     {
         if (!enabled) return;
+        if (objetivo == null) Start();
+        if (objetivo == null) return;
 
-        if (esClon)
-        {
-            CrearLetrero(posicion, textoClon, colorClon);
-        }
-        else if (culpable)
-        {
-            string txt = mostrarPuntos ? textoCulpable + " +" + puntos : textoCulpable;
-            CrearLetrero(posicion, txt, colorCulpable);
-        }
-        else
-        {
-            string txt = mostrarPuntos ? textoInocente + "\n-" + puntos : textoInocente;
-            CrearLetrero(posicion, txt, colorInocente);
-        }
+        ConfigLetrero cfg = tipo == TipoLetrero.Culpable ? culpable
+                          : tipo == TipoLetrero.Inocente ? inocente
+                          : clon;
+
+        string textoPuntos = "";
+        if (mostrarPuntos && tipo == TipoLetrero.Culpable) textoPuntos = "+" + puntos;
+        if (mostrarPuntos && tipo == TipoLetrero.Inocente) textoPuntos = "-" + puntos;
+
+        if (reemplazarAnterior && actual != null) Destroy(actual.gameObject);
+
+        LetreroItem item = Instantiate(prefabLetrero, canvasRect);
+        item.name = "Letrero";
+        item.Configurar(cfg.texto, textoPuntos, cfg.color, cfg.icono);
+
+        RectTransform rt = item.GetComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0f); // La punta de la colita queda en el punto calculado
+
+        actual = item;
+        Posicionar(item);
+        Sonar(cfg.sonido);
+        StartCoroutine(Animar(item));
     }
 
-    [ContextMenu("Probar letrero culpable (en Play)")]
-    private void ProbarCulpable() { Mostrar(PosPrueba(), true, 100); }
+    [ContextMenu("Probar culpable (en Play)")]
+    private void ProbarCulpable() { Mostrar(TipoLetrero.Culpable, 100); }
 
-    [ContextMenu("Probar letrero inocente (en Play)")]
-    private void ProbarInocente() { Mostrar(PosPrueba(), false, 100); }
+    [ContextMenu("Probar inocente (en Play)")]
+    private void ProbarInocente() { Mostrar(TipoLetrero.Inocente, 100); }
 
-    private Vector3 PosPrueba()
+    [ContextMenu("Probar clon (en Play)")]
+    private void ProbarClon() { Mostrar(TipoLetrero.Clon); }
+
+    // ---------- Seguimiento ----------
+    private void LateUpdate()
     {
-        return Camera.main != null
-            ? Camera.main.transform.position + Camera.main.transform.forward * 6f
-            : Vector3.zero;
+        if (actual != null) Posicionar(actual);
     }
 
-    // ---------- Letrero ----------
-    private void CrearLetrero(Vector3 posMundo, string texto, Color color)
+    private void Posicionar(LetreroItem item)
     {
-        Vector2 posInicial;
+        Camera cam = Camera.main;
+        if (cam == null || objetivo == null) return;
 
-        if (enParteInferior)
-        {
-            posInicial = new Vector2(0f, margenInferior);
-            if (reemplazarAnterior && letreroActual != null) Destroy(letreroActual);
-        }
-        else
-        {
-            Camera cam = Camera.main;
-            if (cam == null) return;
+        Vector3 sp = cam.WorldToScreenPoint(objetivo.position + offsetMundo);
+        if (sp.z <= 0f) return;
 
-            Vector3 sp = cam.WorldToScreenPoint(posMundo + Vector3.up * alturaLetrero);
-            if (sp.z <= 0f) return;
+        Camera camUI = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+        Vector2 local;
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, sp, camUI, out local)) return;
 
-            Camera camUI = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, sp, camUI, out posInicial)) return;
-        }
+        local += offsetPantalla;
 
-        RectTransform rt;
-        TextMeshProUGUI t;
+        // Mantener la burbuja dentro de la pantalla
+        RectTransform rt = item.GetComponent<RectTransform>();
+        Vector2 mitadCanvas = canvasRect.rect.size * 0.5f;
+        float mitadAncho = rt.rect.width * 0.5f;
+        local.x = Mathf.Clamp(local.x, -mitadCanvas.x + mitadAncho + margenBordes, mitadCanvas.x - mitadAncho - margenBordes);
+        local.y = Mathf.Clamp(local.y, -mitadCanvas.y + margenBordes, mitadCanvas.y - rt.rect.height - margenBordes);
 
-        if (prefabLetrero != null)
-        {
-            TMP_Text copia = Instantiate(prefabLetrero, canvasRect);
-            rt = copia.rectTransform;
-            t = copia as TextMeshProUGUI;
-            if (t == null)
-            {
-                Debug.LogError("LetreroCaptura: el prefab debe ser un TextMeshPro - Text (UI).");
-                Destroy(copia.gameObject);
-                return;
-            }
-        }
-        else
-        {
-            GameObject go = new GameObject("Letrero", typeof(RectTransform));
-            rt = go.GetComponent<RectTransform>();
-            rt.SetParent(canvasRect, false);
-            rt.sizeDelta = new Vector2(900f, 140f);
-            t = go.AddComponent<TextMeshProUGUI>();
-            t.fontSize = tamanoTexto;
-            t.fontStyle = FontStyles.Bold;
-            t.alignment = TextAlignmentOptions.Center;
-            t.outlineWidth = 0.25f;
-            t.outlineColor = new Color32(10, 30, 40, 255);
-            if (fuente != null) t.font = fuente;
-        }
-
-        // Abajo: ancla al borde inferior central. Sobre el NPC: ancla al centro.
-        Vector2 ancla = enParteInferior ? new Vector2(0.5f, 0f) : new Vector2(0.5f, 0.5f);
-        rt.anchorMin = rt.anchorMax = ancla;
-        rt.pivot = enParteInferior ? new Vector2(0.5f, 0f) : new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = posInicial;
-        t.text = texto;
-        t.color = color;
-        t.raycastTarget = false;
-
-        if (enParteInferior) letreroActual = rt.gameObject;
-        StartCoroutine(AnimarLetrero(rt, t, posInicial));
+        rt.anchoredPosition = local;
     }
 
-    private IEnumerator AnimarLetrero(RectTransform rt, TextMeshProUGUI t, Vector2 inicio)
+    // ---------- Animación (solo mueve "contenido", la raíz sigue al jugador) ----------
+    private IEnumerator Animar(LetreroItem item)
     {
-        float dur = duracionLetrero;
-        for (float tiempo = 0f; tiempo < dur; tiempo += Time.unscaledDeltaTime)
+        RectTransform contenido = item.contenido;
+        CanvasGroup cg = item.grupo;
+        float entrada = 0.2f;
+        float salida = Mathf.Max(0.2f, duracion * 0.3f);
+        float espera = Mathf.Max(0f, duracion - entrada - salida);
+
+        // Entrada: "pop" que crece desde la punta de la colita
+        for (float t = 0f; t < entrada; t += Time.unscaledDeltaTime)
         {
-            if (rt == null) yield break;
-            float k = tiempo / dur;
-
-            // "Pop": 0 -> 1.25 -> 1
-            float escala;
-            if (tiempo < 0.15f) escala = Mathf.Lerp(0f, 1.25f, tiempo / 0.15f);
-            else if (tiempo < 0.25f) escala = Mathf.Lerp(1.25f, 1f, (tiempo - 0.15f) / 0.10f);
-            else escala = 1f;
-            rt.localScale = Vector3.one * escala;
-
-            rt.anchoredPosition = inicio + Vector2.up * (distanciaSubida * Mathf.Sqrt(k));
-
-            Color c = t.color;
-            c.a = k < 0.65f ? 1f : Mathf.InverseLerp(1f, 0.65f, k);
-            t.color = c;
-
+            if (item == null) yield break;
+            float k = t / entrada;
+            float escala = k < 0.7f ? Mathf.Lerp(0f, 1.15f, k / 0.7f) : Mathf.Lerp(1.15f, 1f, (k - 0.7f) / 0.3f);
+            contenido.localScale = Vector3.one * escala;
+            cg.alpha = Mathf.Clamp01(k * 2f);
             yield return null;
         }
-        if (rt != null) Destroy(rt.gameObject);
+        if (item == null) yield break;
+        contenido.localScale = Vector3.one;
+        cg.alpha = 1f;
+
+        yield return new WaitForSecondsRealtime(espera);
+
+        // Salida: se desvanece y sube un poco
+        for (float t = 0f; t < salida; t += Time.unscaledDeltaTime)
+        {
+            if (item == null) yield break;
+            float k = t / salida;
+            contenido.anchoredPosition = new Vector2(0f, Mathf.Lerp(0f, distanciaSubida, k));
+            cg.alpha = 1f - k;
+            yield return null;
+        }
+
+        if (item != null)
+        {
+            if (actual == item) actual = null;
+            Destroy(item.gameObject);
+        }
+    }
+
+    // Reproduce el diálogo por el AudioSource (así obedece el slider de Voces)
+    private void Sonar(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        if (fuenteVoz != null)
+        {
+            fuenteVoz.PlayOneShot(clip);
+        }
+        else if (Camera.main != null)
+        {
+            // Respaldo: suena, pero no pasa por el mixer
+            AudioSource.PlayClipAtPoint(clip, Camera.main.transform.position);
+        }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,29 +9,28 @@ public class GestorTiempo : MonoBehaviour
 {
     public static GestorTiempo Instancia { get; private set; }
 
-    public static event Action OnAmanecer;          // Fin de la partida
-    public static event Action<int> OnCambioHora;   // 1, 2, 3, 4, 5, 6
+    public static event Action OnAmanecer;       
+    public static event Action<int> OnCambioHora; //Salta de hora en hora
 
-    [Header("Duración")]
+    // Duración
     public float duracionPartida = 300f; // 5 minutos reales
-    public float horaInicio = 0f;        // 0 = 12:00 AM
-    public float horaFin = 6f;           // 6:00 AM
+    public float horaInicio = 0f; // 0 = 12:00 AM
+    public float horaFin = 6f; // 6:00 AM
 
-    [Header("UI")]
+    // UI
     public TMP_Text textoTitulo;
     public TMP_Text textoHora;
     public Image iconoVela;
-    public bool mostrarCuentaRegresiva = false; // true = horas que faltan para el amanecer
+    public bool mostrarCuentaRegresiva = false;
 
-    [Header("Luz (opcional)")]
+    // Luz
     public Light luzDireccional;
     public Gradient colorLuz;
     public AnimationCurve intensidadLuz = AnimationCurve.Linear(0f, 0.1f, 1f, 1f);
 
-    [Header("Fin de partida")]
-    public GameObject panelFinPartida;   // Panel que se activa al amanecer (puede estar desactivado en la escena)
-    public TMP_Text textoResultado;      // Opcional: muestra el puntaje final
-    public string mensajeFin = "¡Amaneció!";
+    // Fin de partida
+    public string escenaFinPartida = "FinPartida"; // Nombre exacto de la escena final
+    public float retrasoFin = 1.5f; // Segundos (tiempo real) que se ve el amanecer antes de cambiar de escena
 
     public float Progreso { get; private set; }
     public float HoraActual { get; private set; }
@@ -49,7 +49,6 @@ public class GestorTiempo : MonoBehaviour
     private void Start()
     {
         if (textoTitulo != null) textoTitulo.text = "Tiempo hasta el amanecer";
-        if (panelFinPartida != null) panelFinPartida.SetActive(false);
         ActualizarHora();
         ActualizarUI();
     }
@@ -113,40 +112,37 @@ public class GestorTiempo : MonoBehaviour
         HoraActual = horaFin;
         ActualizarUI();
 
-        // Bloquear al jugador y al perro
+        // Guardar el puntaje y bloquear al jugador y al perro
         PlayerController jugador = FindAnyObjectByType<PlayerController>();
         if (jugador != null)
         {
-            if (textoResultado != null)
-                textoResultado.text = mensajeFin + "\nPuntaje: " + jugador.puntuacionActual;
+            DatosPartida.PuntajeFinal = jugador.puntuacionActual;
             jugador.enabled = false;
-        }
-        else if (textoResultado != null)
-        {
-            textoResultado.text = mensajeFin;
         }
 
         PerroController perro = FindAnyObjectByType<PerroController>();
         if (perro != null) perro.enabled = false;
 
-        if (panelFinPartida != null) panelFinPartida.SetActive(true);
-
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
         Time.timeScale = 0f;
 
         OnAmanecer?.Invoke();
+        StartCoroutine(IrAFinPartida());
+    }
+
+    // Espera con tiempo real (el juego está en pausa) y carga la escena final
+    private IEnumerator IrAFinPartida()
+    {
+        yield return new WaitForSecondsRealtime(retrasoFin);
+
+        Time.timeScale = 1f;
+        if (Application.CanStreamedLevelBeLoaded(escenaFinPartida))
+            SceneManager.LoadScene(escenaFinPartida);
+        else
+            Debug.LogError("GestorTiempo: la escena '" + escenaFinPartida + "' no existe o no está en Scenes In Build.");
     }
 
     public float SegundosRealesRestantes() => Mathf.Max(0f, duracionPartida - tiempoTranscurrido);
 
     public void Pausar() => EnPausa = true;
     public void Reanudar() => EnPausa = false;
-
-    // Para el botón "Jugar de nuevo" del panel final
-    public void ReiniciarEscena()
-    {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
 }

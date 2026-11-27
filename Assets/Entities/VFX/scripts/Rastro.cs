@@ -1,250 +1,235 @@
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
 
-[RequireComponent(typeof(ParticleSystem))]
 public class Rastro : MonoBehaviour
 {
-//Hilo de seda
-    public float grosorHilo = 0.025f; // muy delgado
-    public float velocidadEstela = 1f; // avance hacia adelante
-    public float tiempoVidaParticula = 3.5f; // largo del hilo = velocidad * vida
-    public int tasaEmisionBase = 4; // pocas hebras, delicadas
+    [Header("Referencias")]
+    public PerroController perro;        // Destino/referencia del rastro (si está vacío, usa al jugador)
+    public Transform origenManual;       // Opcional: fuerza otro punto de llegada/referencia (por ejemplo, el jugador)
+    public Material material;            // Lo asigna Tools > Material Rastro
 
-//Serpenteo
-    public float amplitudOnda = 1f; //cuánto se abre cada curva
-    public float ciclosOnda = 2f; // número de "S" a lo largo del hilo
-    [Range(0f, 1f)]
-    public float variacionHebras = 0.05f; // diferencia de velocidad entre hebras
-    public float fuerzaRuido = 0.12f; // ondulación orgánica extra
+    [Header("Alcance y Transparencia")]
+    public float rangoMaximo = 80f;      // Metros hasta donde empieza a aparecer el rastro
+    // 0 = cerca (más claro/visible), 1 = rango máximo (invisible / transparente)
+    public AnimationCurve caida = new AnimationCurve(
+        new Keyframe(0f, 1f),
+        new Keyframe(0.75f, 0.25f),
+        new Keyframe(1f, 0f)
+    );
 
- //Orientación
-    public bool orientarHaciaPerro = true;
+    [Header("Aspecto")]
+    public Color colorRastro = new Color(0.65f, 0.04f, 0.04f); // Rojo oscuro
+    public Color colorSecundario = new Color(0.04f, 0.04f, 0.04f); // Negro para mezclar con el rojo
+    public int hebras = 3;               // Cintas por objetivo
+    public int segmentos = 40;
+    public float anchoCerca = 0.9f;      // Ancho cuando está cerca
+    public float anchoLejos = 0.2f;      // Ancho cuando está lejos
+    public float amplitudOnda = 1.6f;    // Cuánto serpentea
+    public float frecuenciaOnda = 0.12f; // Curvas por metro
+    public float velocidadOnda = 1.2f;   // Qué tan rápido se mueve la ondulación
+    public float separacionHebras = 0.3f;
 
-  //Color
-    public Color colorOrigenIntenso = new Color(1f, 0.25f, 0.05f, 1f);
-    public Color colorColaClara = new Color(1f, 0.85f, 0.72f, 0f);
-    [Range(1f, 8f)]
-    public float multiplicadorBrilloHDR = 3f;
+    [Header("Suelo")]
+    public float alturaSuelo = 0.2f;
+    public LayerMask capaSuelo;          // Si lo asignas, el rastro sigue el relieve del terreno
 
-//Intensidad según cercanía del perro
-    public float distanciaMaximaEfecto = 30f;
-    public float distanciaMinimaEfecto = 2f;
-    public float multiplicadorCercaniaMax = 20;
+    [Header("Tiempos")]
+    public float tiempoEntrada = 0.4f;
+    public float tiempoSalida = 1.0f;
+    public float intervaloBusqueda = 0.4f;
 
-    private ParticleSystem ps;
-    private ParticleSystemRenderer psRenderer;
-    private Transform perroTransform;
-    private AnimationCurve curvaAncho;
+    private readonly Dictionary<NPCIdentity, LineRenderer[]> lineas = new Dictionary<NPCIdentity, LineRenderer[]>();
+    private readonly List<NPCIdentity> candidatos = new List<NPCIdentity>();
+    private readonly List<NPCIdentity> basura = new List<NPCIdentity>();
+    private Transform jugador;
+    private float visibilidad;
+    private float proximaBusqueda;
 
-    void Awake()
+    private void Start()
     {
-        ps = GetComponent<ParticleSystem>();
-        psRenderer = GetComponent<ParticleSystemRenderer>();
-        ConfigurarSistemaParticulas();
+        PlayerController p = FindAnyObjectByType<PlayerController>();
+        if (p != null) jugador = p.transform;
+        if (perro == null) perro = FindAnyObjectByType<PerroController>();
     }
 
-    void Start()
+    private void LateUpdate()
     {
-        PerroController perro = FindAnyObjectByType<PerroController>();
-        if (perro != null) perroTransform = perro.transform;
-    }
+        bool activo = PerroController.estaOlfateando;
+        float tiempo = activo ? tiempoEntrada : tiempoSalida;
+        visibilidad = Mathf.MoveTowards(visibilidad, activo ? 1f : 0f, Time.deltaTime / Mathf.Max(0.01f, tiempo));
 
-    void Update()
-    {
-        if (ps == null) return;
+        if (visibilidad <= 0f) { OcultarTodo(); return; }
 
-        float factorCercania = 0f;
-        if (perroTransform != null && perroTransform.gameObject.activeInHierarchy)
+        Transform destino = origenManual != null ? origenManual : (perro != null ? perro.transform : jugador);
+        if (destino == null) return;
+
+        if (Time.time >= proximaBusqueda)
         {
-            float distancia = Vector3.Distance(transform.position, perroTransform.position);
-            factorCercania = Mathf.Clamp01(1f - Mathf.InverseLerp(distanciaMinimaEfecto, distanciaMaximaEfecto, distancia));
+            proximaBusqueda = Time.time + intervaloBusqueda;
+            BuscarCulpables();
+        }
 
-            if (orientarHaciaPerro)
+        foreach (NPCIdentity npc in candidatos)
+        {
+            if (npc == null) continue;
+            ActualizarRastro(npc, destino.position);
+        }
+
+        LimpiarDestruidos();
+    }
+
+    private void BuscarCulpables()
+    {
+        candidatos.Clear();
+        foreach (NPCIdentity npc in FindObjectsByType<NPCIdentity>())
+        {
+            if (!npc.esCulpable()) continue;
+            TramposoNPC tramposo = npc.GetComponentInParent<TramposoNPC>();
+            if (tramposo != null && tramposo.esClon) continue; // Los clones no dejan rastro
+            candidatos.Add(npc);
+        }
+    }
+
+    private void ActualizarRastro(NPCIdentity npc, Vector3 destino)
+    {
+        // Origen (a) en el NPC objetivo; destino (b) en el perro o jugador
+        Vector3 a = npc.transform.position;
+        Vector3 b = destino;
+
+        Vector3 dir = b - a;
+        dir.y = 0f;
+        float dist = dir.magnitude;
+
+        LineRenderer[] hs = ObtenerLineas(npc);
+
+        float factorDistancia = Mathf.Clamp01(dist / Mathf.Max(0.01f, rangoMaximo));
+        float cercania = Mathf.Clamp01(caida.Evaluate(factorDistancia));
+        float intensidad = cercania * visibilidad;
+
+        if (dist > rangoMaximo || dist < 1.5f || intensidad <= 0.005f)
+        {
+            foreach (var lr in hs)
+                if (lr != null) lr.enabled = false;
+            return;
+        }
+
+        dir /= dist;
+        Vector3 lado = new Vector3(-dir.z, 0f, dir.x);
+        float semillaNPC = Mathf.Abs(npc.GetEntityId().GetHashCode() % 100);
+        int numSegmentos = Mathf.Max(1, segmentos);
+
+        for (int h = 0; h < hs.Length; h++)
+        {
+            LineRenderer lr = hs[h];
+            if (lr == null) continue;
+            lr.enabled = true;
+            if (lr.positionCount != numSegmentos + 1)
+                lr.positionCount = numSegmentos + 1;
+
+            bool principal = h == 0;
+            bool usaColorSecundario = (h % 2) == 1;
+            Color colorHebras = usaColorSecundario ? colorSecundario : colorRastro;
+
+            float semilla = semillaNPC + h * 37.1f;
+            float centrado = h - (hs.Length - 1) * 0.5f;
+
+            for (int i = 0; i <= numSegmentos; i++)
             {
-                Vector3 dir = Vector3.ProjectOnPlane(perroTransform.position - transform.position, Vector3.up);
-                if (dir.sqrMagnitude > 0.0001f)
-                    transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
+                float t = i / (float)numSegmentos;
+                Vector3 p = Vector3.Lerp(a, b, t);
+
+                float envolvente = Mathf.Sin(t * Mathf.PI); // Los extremos quedan fijos
+                float ruido = (Mathf.PerlinNoise(t * dist * frecuenciaOnda + Time.time * velocidadOnda, semilla) - 0.5f) * 2f;
+                float onda = ruido * amplitudOnda * (principal ? 0.5f : 1f);
+                p += lado * ((onda + centrado * separacionHebras) * envolvente);
+
+                p.y = a.y + alturaSuelo;
+                if (capaSuelo.value != 0)
+                {
+                    RaycastHit hit;
+                    if (Physics.Raycast(p + Vector3.up * 50f, Vector3.down, out hit, 120f, capaSuelo))
+                        p.y = hit.point.y + alturaSuelo;
+                }
+                lr.SetPosition(i, p);
             }
+
+            float alfa = Mathf.Clamp01(intensidad * (principal ? 0.9f : 0.7f));
+            Gradient grad = new Gradient();
+            grad.SetKeys(
+                new GradientColorKey[]
+                {
+                    new GradientColorKey(colorHebras, 0f),
+                    new GradientColorKey(colorHebras, 1f)
+                },
+                new GradientAlphaKey[]
+                {
+                    new GradientAlphaKey(alfa, 0f),
+                    new GradientAlphaKey(alfa * 0.65f, 0.5f),
+                    new GradientAlphaKey(alfa * 0.15f, 1f)
+                }
+            );
+            lr.colorGradient = grad;
+            lr.widthMultiplier = Mathf.Lerp(anchoLejos, anchoCerca, cercania) * (principal ? 1f : 0.65f);
         }
-
-        var trails = ps.trails;
-        trails.widthOverTrail = new ParticleSystem.MinMaxCurve(
-            grosorHilo * Mathf.Lerp(0.8f, multiplicadorCercaniaMax, factorCercania), curvaAncho);
-
-        var emission = ps.emission;
-        emission.rateOverTime = tasaEmisionBase * Mathf.Lerp(0.8f, multiplicadorCercaniaMax, factorCercania);
     }
 
-    void ConfigurarSistemaParticulas()
+    private LineRenderer[] ObtenerLineas(NPCIdentity npc)
     {
-        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        LineRenderer[] hs;
+        if (lineas.TryGetValue(npc, out hs)) return hs;
 
-        // ---- Main ----
-        var main = ps.main;
-        main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.startLifetime = new ParticleSystem.MinMaxCurve(tiempoVidaParticula * 0.85f, tiempoVidaParticula * 1.15f);
-        main.startSpeed = new ParticleSystem.MinMaxCurve(
-            velocidadEstela * (1f - variacionHebras * 0.5f),
-            velocidadEstela * (1f + variacionHebras * 0.5f));
-        main.startSize = 0.05f;
-        main.gravityModifier = 0f;
-        main.maxParticles = 60;
-        main.playOnAwake = true;
-        main.startColor = new Color(colorOrigenIntenso.r, colorOrigenIntenso.g, colorOrigenIntenso.b, 1f);
-
-        //Emisión
-        var emission = ps.emission;
-        emission.enabled = true;
-        emission.rateOverTime = tasaEmisionBase;
-
-        //Shape: emite hacia adelante (Z local) desde un punto ----
-        var shape = ps.shape;
-        shape.enabled = true;
-        shape.shapeType = ParticleSystemShapeType.SingleSidedEdge;
-        shape.radius = 0.01f;
-        shape.rotation = new Vector3(90f, 0f, 0f);
-
-        //Serpenteo
-        var vel = ps.velocityOverLifetime;
-        vel.enabled = true;
-        vel.space = ParticleSystemSimulationSpace.Local;
-
-        AnimationCurve onda = new AnimationCurve();
-        int pasos = Mathf.Max(8, Mathf.CeilToInt(ciclosOnda * 12f));
-        for (int i = 0; i <= pasos; i++)
+        int numSegmentos = Mathf.Max(1, segmentos);
+        hs = new LineRenderer[Mathf.Max(1, hebras)];
+        for (int h = 0; h < hs.Length; h++)
         {
-            float t = i / (float)pasos;
-            onda.AddKey(new Keyframe(t, Mathf.Cos(2f * Mathf.PI * ciclosOnda * t)));
+            GameObject go = new GameObject("Rastro_" + npc.name + "_" + h);
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = Vector3.zero;
+            go.transform.localRotation = Quaternion.identity;
+            go.transform.localScale = Vector3.one;
+
+            LineRenderer lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = true;
+            lr.positionCount = numSegmentos + 1;
+            lr.sharedMaterial = material;
+            lr.textureMode = LineTextureMode.Stretch;
+            lr.alignment = LineAlignment.View;
+            lr.numCapVertices = 4;
+            lr.numCornerVertices = 4;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            lr.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(0.5f, 0.8f), new Keyframe(1f, 0.15f));
+            lr.enabled = false;
+            hs[h] = lr;
         }
-        for (int i = 0; i < onda.length; i++) onda.SmoothTangents(i, 0f);
+        lineas[npc] = hs;
+        return hs;
+    }
 
-        AnimationCurve cero = AnimationCurve.Constant(0f, 1f, 0f);
-        float velLateral = amplitudOnda * 2f * Mathf.PI * ciclosOnda / tiempoVidaParticula;
-        vel.x = new ParticleSystem.MinMaxCurve(velLateral, onda);
-        vel.y = new ParticleSystem.MinMaxCurve(1f, cero);   // los 3 ejes deben usar el mismo modo
-        vel.z = new ParticleSystem.MinMaxCurve(1f, cero);
+    private void OcultarTodo()
+    {
+        foreach (var par in lineas)
+            foreach (var lr in par.Value)
+                if (lr != null && lr.enabled) lr.enabled = false;
+    }
 
-        //Ruido suave para que cada hebra se mueva como tela
-        var noise = ps.noise;
-        noise.enabled = true;
-        noise.separateAxes = true;
-        noise.strengthX = fuerzaRuido;
-        noise.strengthY = fuerzaRuido * 0.5f;
-        noise.strengthZ = fuerzaRuido * 0.5f;
-        noise.frequency = 0.25f;
-        noise.scrollSpeed = 0.2f;
-        noise.damping = true;
-        noise.quality = ParticleSystemNoiseQuality.Medium;
+    private void LimpiarDestruidos()
+    {
+        basura.Clear();
+        foreach (var par in lineas)
+            if (par.Key == null) basura.Add(par.Key);
 
-        //Trails
-        curvaAncho = new AnimationCurve(
-            new Keyframe(0f, 1f),
-            new Keyframe(0.6f, 0.45f),
-            new Keyframe(1f, 0f));
-        for (int i = 0; i < curvaAncho.length; i++) curvaAncho.SmoothTangents(i, 0f);
-
-        var trails = ps.trails;
-        trails.enabled = true;
-        trails.mode = ParticleSystemTrailMode.PerParticle;
-        trails.ratio = 1f;
-        trails.lifetime = new ParticleSystem.MinMaxCurve(1f);   // la cinta recuerda todo el recorrido
-        trails.minVertexDistance = 0.05f;
-        trails.worldSpace = true;
-        trails.textureMode = ParticleSystemTrailTextureMode.Stretch;
-        trails.inheritParticleColor = true;
-        trails.sizeAffectsWidth = false;
-        trails.widthOverTrail = new ParticleSystem.MinMaxCurve(grosorHilo, curvaAncho);
-
-        Gradient gradCinta = new Gradient();
-        gradCinta.SetKeys(
-            new GradientColorKey[]
+        if (basura.Count == 0) return;
+        var vivos = new Dictionary<NPCIdentity, LineRenderer[]>();
+        foreach (var par in lineas)
+        {
+            if (par.Key == null)
             {
-                new GradientColorKey(colorOrigenIntenso, 0f),
-                new GradientColorKey(colorColaClara, 1f)
-            },
-            new GradientAlphaKey[]
-            {
-                new GradientAlphaKey(0f, 0f),      // la punta nace suave
-                new GradientAlphaKey(0.9f, 0.08f),
-                new GradientAlphaKey(0.5f, 0.6f),
-                new GradientAlphaKey(0f, 1f)       // la cola se desvanece
-            });
-        trails.colorOverTrail = new ParticleSystem.MinMaxGradient(gradCinta);
-
-        if (psRenderer != null)
-        {
-            psRenderer.renderMode = ParticleSystemRenderMode.None;   // solo se ve la cinta
-            psRenderer.shadowCastingMode = ShadowCastingMode.Off;
-            psRenderer.receiveShadows = false;
-            psRenderer.trailMaterial = CrearMaterialBrillante();
+                foreach (var lr in par.Value) if (lr != null) Destroy(lr.gameObject);
+            }
+            else vivos[par.Key] = par.Value;
         }
-
-        ps.Play();
-    }
-
-    //Material aditivo con brillo HDR
-
-    Material CrearMaterialBrillante()
-    {
-        Color colorHDR = new Color(
-            colorOrigenIntenso.r * multiplicadorBrilloHDR,
-            colorOrigenIntenso.g * multiplicadorBrilloHDR,
-            colorOrigenIntenso.b * multiplicadorBrilloHDR,
-            1f);
-
-        Texture2D tex = CrearTexturaHilo();
-
-        Shader sh = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-        if (sh != null)
-        {
-            Material m = new Material(sh);
-            m.SetFloat("_Surface", 1f);
-            m.SetFloat("_Blend", 2f);
-            m.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-            m.SetFloat("_DstBlend", (float)BlendMode.One);
-            m.SetFloat("_ZWrite", 0f);
-            m.SetOverrideTag("RenderType", "Transparent");
-            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            m.renderQueue = (int)RenderQueue.Transparent;
-            m.SetTexture("_BaseMap", tex);
-            m.SetColor("_BaseColor", colorHDR);
-            return m;
-        }
-
-        sh = Shader.Find("Legacy Shaders/Particles/Additive");
-        if (sh != null)
-        {
-            Material m = new Material(sh);
-            m.SetTexture("_MainTex", tex);
-            m.SetColor("_TintColor", colorHDR * 0.5f);
-            m.renderQueue = (int)RenderQueue.Transparent;
-            return m;
-        }
-
-        Material fallback = new Material(Shader.Find("Sprites/Default"));
-        fallback.mainTexture = tex;
-        fallback.color = colorHDR;
-        return fallback;
-    }
-
-    // Degradado solo a lo ancho: centro brillante y bordes transparentes (aspecto de seda, no sólido)
-    Texture2D CrearTexturaHilo()
-    {
-        const int w = 4, h = 32;
-        Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-        t.wrapMode = TextureWrapMode.Clamp;
-        t.filterMode = FilterMode.Bilinear;
-
-        for (int y = 0; y < h; y++)
-        {
-            float v = Mathf.Abs((y / (float)(h - 1)) * 2f - 1f);   // 0 centro, 1 borde
-            float a = Mathf.Clamp01(1f - v);
-            a = a * a * (3f - 2f * a);
-            a *= a;                                                // núcleo más fino
-            for (int x = 0; x < w; x++)
-                t.SetPixel(x, y, new Color(1f, 1f, 1f, a));
-        }
-        t.Apply();
-        return t;
+        lineas.Clear();
+        foreach (var par in vivos) lineas[par.Key] = par.Value;
     }
 }
