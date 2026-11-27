@@ -238,7 +238,7 @@ public class NPCSpawner : MonoBehaviour
             }
         }
     }
-
+#if UNITY_EDITOR
     void OnDrawGizmosSelected()
     {
         Handles.color = Color.blue;
@@ -265,4 +265,5 @@ public class NPCSpawner : MonoBehaviour
             }
         }
     }
+    #endif
 }

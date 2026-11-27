@@ -63,11 +63,11 @@ Material:
     m_Floats:
     - _BumpScale: 1
     - _ColorMask: 15
-    - _ColorSpeed: 2
+    - _ColorSpeed: 7.53
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _Exposure: 2.39
+    - _Exposure: 2.71
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1

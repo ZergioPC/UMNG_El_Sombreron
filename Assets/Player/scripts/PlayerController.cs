@@ -52,6 +52,20 @@ public class PlayerController : MonoBehaviour
     private bool perroInvocado = false; // True mientras el perro está activo
     private Coroutine rutinaInvocacionPerro;
 
+// Control de ataque y stun
+    private Coroutine rutinaAtrapar;
+    private bool estaAturdido = false;
+
+// HUD: datos de enfriamiento para el contador de habilidades
+    private float finCooldownDash = 0f; // HUD: momento (Time.time) en que el dash vuelve a estar listo
+    private float finCooldownPerro = 0f; // HUD: momento (Time.time) en que el perro vuelve a estar listo
+
+    public float DashRestante { get { return dashDisponible ? 0f : Mathf.Max(0f, finCooldownDash - Time.time); } } // HUD
+    public float DashTiempoTotal { get { return dashDuration + dashCooldown; } } // HUD
+    public bool PerroActivo { get { return perroInvocado; } } // HUD
+    public float PerroRestante { get { return invocacionDisponible || perroInvocado ? 0f : Mathf.Max(0f, finCooldownPerro - Time.time); } } // HUD
+    public float PerroTiempoTotal { get { return tiempoCooldownInvocacion; } } // HUD
+
 // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
     {
@@ -110,12 +124,10 @@ public class PlayerController : MonoBehaviour
         ps.Play(true);
     }
 
+
     void ProcesarMovimiento() // Metodo para procesar el movimiento del jugador
     {
-        if (haciendoDash) // Si el jugador está haciendo un dash, no permitir el movimiento normal
-        {
-            return;
-        }
+        if (haciendoDash) return;
 
         //Logica de movimiento del jugador
         float moveHorizontal = Input.GetAxis("Horizontal");
@@ -184,6 +196,7 @@ public class PlayerController : MonoBehaviour
     {
         haciendoDash = true;
         dashDisponible = false;
+        finCooldownDash = Time.time + dashDuration + dashCooldown; // HUD: cuándo vuelve a estar listo
 
         if (vfxDash != null)
         {
@@ -237,7 +250,12 @@ public class PlayerController : MonoBehaviour
                     {
                         animator.SetTrigger("attack");
                     }
-                    StartCoroutine(AtraparNPC(npc));
+
+                    if (rutinaAtrapar != null)
+                    {
+                        StopCoroutine(rutinaAtrapar);
+                    }
+                    rutinaAtrapar = StartCoroutine(AtraparNPC(npc));
                 }
             }
         }
@@ -281,24 +299,37 @@ public class PlayerController : MonoBehaviour
             {
                 bool dioPuntos;
                 tramposo.IntentarCapturar(out dioPuntos); // Dispara el VFX del clon y devuelve dioPuntos = false
+
+                if (Letrero.Instancia != null)
+                    Letrero.Instancia.Mostrar(TipoLetrero.Clon);
+
                 Destroy(npc.gameObject);
-                bajoControlJugador = true;
+                rutinaAtrapar = null;
+                if (!estaAturdido) bajoControlJugador = true;
                 yield break;
             }
 
             bool culpable = npc.esCulpable();
-            if (culpable) puntuacionActual += npc.puntosModificador;
-            else puntuacionActual -= npc.puntosModificador;
+            int puntos = npc.puntosModificador;
 
-            // Letrero flotante: siempre
-            //if (Letrero.Instancia != null) Letrero.Instancia.Mostrar(posNPC, culpable, puntos);
+            if (culpable) puntuacionActual += puntos;
+            else puntuacionActual -= puntos;
+
+            if (Letrero.Instancia != null)
+                Letrero.Instancia.Mostrar(culpable ? TipoLetrero.Culpable : TipoLetrero.Inocente, puntos);
 
             // Banner: solo cuando atrapas a un culpable (antes de destruir al NPC, porque lee sus scripts)
-            if (culpable && BannerCapturados.Instancia != null) BannerCapturados.Instancia.Mostrar(npc.gameObject);
+            if (culpable && BannerCapturados.Instancia != null)
+                BannerCapturados.Instancia.Mostrar(npc.gameObject);
 
             Destroy(npc.gameObject); // Destruir el NPC atrapado en el fotograma objetivo
         }
-        bajoControlJugador = true;
+
+        rutinaAtrapar = null;
+        if (!estaAturdido)
+        {
+            bajoControlJugador = true;
+        }
     }
 
     private IEnumerator EsperarHastaFotogramaAtaque(int fotogramaObjetivo)
@@ -423,6 +454,7 @@ public class PlayerController : MonoBehaviour
 
     private IEnumerator CooldownInvocacion()
     {
+        finCooldownPerro = Time.time + tiempoCooldownInvocacion; // HUD: cuándo vuelve a estar listo el perro
         yield return new WaitForSeconds(tiempoCooldownInvocacion);
         invocacionDisponible = true;
     }
@@ -430,6 +462,21 @@ public class PlayerController : MonoBehaviour
     // Metodo para establecer el estado de stun del jugador
     public void EstablecerStun(bool estado)
     {
+        // No aplicar stun nuevo durante dash o mientras controla al perro
+        if (estado && (haciendoDash || perroInvocado))
+        {
+            return;
+        }
+
+        estaAturdido = estado;
+
+        // Si entra en stun durante un ataque, cancelar la corrutina de captura
+        if (estado && rutinaAtrapar != null)
+        {
+            StopCoroutine(rutinaAtrapar);
+            rutinaAtrapar = null;
+        }
+
         bajoControlJugador = !estado;
         if (estado && rb != null)
         {

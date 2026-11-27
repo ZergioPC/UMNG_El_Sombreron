@@ -484,7 +484,7 @@ MonoBehaviour:
   colorObjetivo: {r: 1, g: 0.2663138, b: 0, a: 1}
   colorInocente: {r: 0.1320967, g: 0.3342422, b: 0.5084495, a: 1}
   duracionRevelacion: 5
-  rastroVisual: {fileID: 3085937280970000856, guid: abedfbe921072164dac42be26d157d68, type: 3}
+  rastroVisual: {fileID: 5466109266041162114, guid: d77f9fbffeff4b04e9c0f2cece3cad3e, type: 3}
   duracionVidaRastro: 3
   intervaloRastro: 0.5
   distanciaMinimaRastro: 1

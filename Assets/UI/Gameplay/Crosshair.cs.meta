@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: a4d364b6b434c0441abf4affe58e758e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - rectTransformMirilla: {instanceID: 0}
+  - cursorMenu: {fileID: 2800000, guid: 7ddee4f368e2ec940805f2d3250d5906, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
